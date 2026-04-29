@@ -14,21 +14,21 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: "Journalise"
-          POSTGRES_USER: "postgres"
-          POSTGRES_PASSWORD: "Madfox123!"
+          POSTGRES_DB: ${{ secrets.DB_NAME }}
+          POSTGRES_USER: ${{ secrets.DB_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.DB_PASSWORD }}
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres" --health-interval=10s
-          --health-timeout=5s --health-retries=5
+          --health-cmd="pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
+          --health-interval=10s --health-timeout=5s --health-retries=5
 
     env:
-      SECRET_KEY: test-secret-key-for-ci
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
       DEBUG: "False"
-      DB_NAME: "Journalise"
-      DB_USER: "postgres"
-      DB_PASSWORD: "Madfox123!"
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
       DB_HOST: localhost
       DB_PORT: 5432
       DJANGO_SETTINGS_MODULE: Journalise.settings
@@ -41,7 +41,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
 
       - name: Install dependencies
         run: |
@@ -53,3 +53,11 @@ jobs:
 
       - name: Run tests
         run: python manage.py test
+
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: ./frontend
+        run: npm run build
