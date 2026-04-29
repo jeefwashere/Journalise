@@ -151,6 +151,32 @@ class GoogleLoginView(APIView):
         )
 
 
+class RegisterView(APIView):
+    authentication_classes = []
+    permission_classes = []
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        username = serializer.validated_data["username"]
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
+
+        user = serializer.save()
+
+        access_token, _ = create_access_token(user)
+
+        return Response(
+            {
+                "access_token": access_token,
+                "token_type": "Bearer",
+                "expires_in": settings.JOURNALISE_ACCESS_TOKEN_SECONDS,
+                "user": UserSerializer(user).data,
+            }
+        )
+
+
 class LoginView(APIView):
     authentication_classes = []
     permission_classes = [permissions.AllowAny]
