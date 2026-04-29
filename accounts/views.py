@@ -128,6 +128,29 @@ def get_or_create_google_user(google_payload):
     return user
 
 
+def auth_response(user, access_token, status_code=status.HTTP_200_OK):
+    response = Response(
+        {
+            "token_type": "Bearer",
+            "expires_in": settings.JOURNALISE_ACCESS_TOKEN_SECONDS,
+            "user": UserSerializer(user).data,
+        },
+        status=status_code,
+    )
+
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=not settings.DEBUG,
+        samesite="Lax",
+        max_age=settings.JOURNALISE_ACCESS_TOKEN_SECONDS,
+        path="/",
+    )
+
+    return response
+
+
 # Google Login/Register view
 class GoogleLoginView(APIView):
     authentication_classes = []
@@ -141,19 +164,12 @@ class GoogleLoginView(APIView):
         user = get_or_create_google_user(google_payload)
         access_token, _ = create_access_token(user)
 
-        return Response(
-            {
-                "access_token": access_token,
-                "token_type": "Bearer",
-                "expires_in": settings.JOURNALISE_ACCESS_TOKEN_SECONDS,
-                "user": UserSerializer(user).data,
-            }
-        )
+        return auth_response(user, access_token, status.HTTP_200_OK)
 
 
 class RegisterView(APIView):
     authentication_classes = []
-    permission_classes = []
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
@@ -163,14 +179,21 @@ class RegisterView(APIView):
 
         access_token, _ = create_access_token(user)
 
-        return Response(
-            {
-                "access_token": access_token,
-                "token_type": "Bearer",
-                "expires_in": settings.JOURNALISE_ACCESS_TOKEN_SECONDS,
-                "user": UserSerializer(user).data,
-            }
+        return auth_response(user, access_token, status.HTTP_201_CREATED)
+
+
+class LogoutView(APIView):
+    authentication_classes = [BearerTokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        response = Response(
+            {"detail": "Logged out successfully."}, status=status.HTTP_200_OK
         )
+
+        response.delete_cookie(key="access_token", path="/", samesite="Lax")
+
+        return response
 
 
 class LoginView(APIView):
@@ -194,15 +217,7 @@ class LoginView(APIView):
 
         access_token, _ = create_access_token(user)
 
-        return Response(
-            {
-                "access_token": access_token,
-                "token_type": "Bearer",
-                "expires_in": settings.JOURNALISE_ACCESS_TOKEN_SECONDS,
-                "user": UserSerializer(user).data,
-            },
-            status=status.HTTP_201_CREATED,
-        )
+        return auth_response(user, access_token, status.HTTP_200_OK)
 
 
 class CurrentUserView(generics.RetrieveUpdateAPIView):
