@@ -20,16 +20,16 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres" --health-interval=10s
-          --health-timeout=5s --health-retries=5
+          --health-cmd="pg_isready -U ${{secrets.DB_USER_JEFF}}"
+          --health-interval=10s --health-timeout=5s --health-retries=5
 
     env:
-      DB_NAME: journalise
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      DB_HOST: localhost
-      DB_PORT: 5432
-      DJANGO_SETTINGS_MODULE: config.settings
+      DB_NAME: ${{secrets.DB_NAME}}
+      DB_USER: ${{secrets.DB_USER_JEFF}}
+      DB_PASSWORD: ${{secrets.DB_PASSWORD}}
+      DB_HOST: ${{secrets.DB_HOST}}
+      DB_PORT: ${{secrets.DB_PORT}}
+      DJANGO_SETTINGS_MODULE: ${{secrets.DJANGO_SETTINGS_MODULE}}
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
