@@ -2,9 +2,9 @@ name: Journalise CI
 
 on:
   push:
-    branches: ["main", "dev"]
+    branches: [ "main", "dev" ]
   pull_request:
-    branches: ["main"]
+    branches: [ "main" ]
 
 jobs:
   backend:
@@ -14,43 +14,40 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: journalise_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ${{secrets.DB_NAME}}
+          POSTGRES_USER: ${{secrets.DB_USER_JEFF}}
+          POSTGRES_PASSWORD: ${{secrets.DB_PASSWORD}}
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=5
+          --health-cmd="pg_isready -U postgres" --health-interval=10s
+          --health-timeout=5s --health-retries=5
 
     env:
-      DB_NAME: journalise_test
+      DB_NAME: journalise
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_HOST: localhost
       DB_PORT: 5432
       DJANGO_SETTINGS_MODULE: config.settings
-      GEMINI_API_KEY: "fake-key-for-ci"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.11"
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-    - name: Install deps
-      run: |
-        pip install -r requirements.txt
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
 
-    - name: Run migrations
-      run: |
-        python manage.py migrate
+      - name: Run migrations
+        run: |
+          python manage.py migrate
 
-    - name: Run tests
-      run: |
-        python manage.py test
+      - name: Run tests
+        run: |
+          python manage.py test
