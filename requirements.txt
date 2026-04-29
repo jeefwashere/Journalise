@@ -10,6 +10,8 @@ djangorestframework==3.17.1
 idna==3.13
 jwcrypto==1.5.7
 oauthlib==3.3.1
+psycopg==3.3.3
+psycopg-binary==3.3.3
 psycopg2-binary==2.9.12
 pycparser==3.0
 PyJWT==2.12.1
