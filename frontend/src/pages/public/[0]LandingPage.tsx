@@ -4,64 +4,46 @@ import "../../styles/public/[0]LandingPage.css";
 export default function LandingPage() {
   return (
     <div className="landing-page">
-      <nav className="landing-navbar">
-        <div className="logo-box">Journalise</div>
+      <nav className="sketch-nav">
+        <Link to="/" className="brand">
+          Journalise
+        </Link>
 
-        <div className="nav-actions">
-          <Link to="/login" className="sketch-button">
+        <div className="nav-buttons">
+          <Link to="/login" className="sketch-btn small login-btn">
             Log In
           </Link>
-          <Link to="/signup" className="sketch-button filled">
+          <Link to="/signup" className="sketch-btn small signup-btn">
             Sign Up
           </Link>
         </div>
       </nav>
 
-      <main className="landing-content">
-        <section className="hero-card">
-          <p className="eyebrow">AI Desktop Journal</p>
+      <main className="hero">
+        <div className="doodle cat">🐱</div>
+        <div className="doodle frog">🐸</div>
+        <div className="doodle flower">✿</div>
+        <div className="doodle paw">🐾</div>
 
-          <h1>Welcome to Journalise</h1>
+        <p className="eyebrow">Time, made visible</p>
 
-          <p className="hero-text">
-            Journalise quietly tracks your desktop activity and turns your day
-            into a clean, readable journal with hourly AI summaries.
-          </p>
+        <h1>
+          A journal app that writes
+          <br />
+          your day for you!
+        </h1>
 
-          <div className="hero-buttons">
-            <Link to="/signup" className="sketch-button filled large">
-              Start Journaling
-            </Link>
+        <p className="subtitle">
+          Journalise observes the rhythm of your desktop activity and reshapes it into
+          readable hourly entries, helping you understand how your time was truly spent.
+        </p>
 
-            <a href="#explain" className="sketch-button large">
-              Explain the App
-            </a>
-          </div>
-        </section>
-
-        <section id="explain" className="features-grid">
-          <div className="feature-card">
-            <h3>Hourly Summaries</h3>
-            <p>See what you worked on each hour without writing anything.</p>
-          </div>
-
-          <div className="feature-card">
-            <h3>AI Journal</h3>
-            <p>Gemini turns your activity into natural journal entries.</p>
-          </div>
-
-          <div className="feature-card">
-            <h3>Desktop Pet</h3>
-            <p>
-              Your pet grows as you stay focused and complete work sessions.
-            </p>
-          </div>
-        </section>
+        <div className="hero-actions">
+          <Link to="/signup" className="sketch-btn big signup-btn">
+            New? Sign up today!
+          </Link>
+        </div>
       </main>
-
-      <div className="doodle doodle-one">✦</div>
-      <div className="doodle doodle-two">☁</div>
-      <div className="doodle doodle-three">❀</div>
     </div>
   );
 }
