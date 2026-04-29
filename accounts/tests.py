@@ -134,7 +134,7 @@ class GoogleLoginViewTests(TestCase):
 
         self.assertEqual(data["token_type"], "Bearer")
         self.assertIn("access_token", data)
-        self.assertEqual(data["expires_in"], 3600)
+        self.assertEqual(data["expires_in"], 1800)
         self.assertEqual(data["user"]["sub"], str(user.pk))
         self.assertEqual(user.username, "google")
         self.assertEqual(user.first_name, "Google")
