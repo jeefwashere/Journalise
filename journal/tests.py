@@ -3,7 +3,9 @@ import json
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from unittest import mock
 
+from django.core.management import call_command
 from django.test import SimpleTestCase
 from journal.activity_types import ActivitySession
 
@@ -355,7 +357,6 @@ class ActivityTrackerTests(SimpleTestCase):
                 duration_seconds=1800,
             ),
         )
-
     def test_switch_session_keeps_active_session_when_new_started_at_is_invalid(self):
         ActivityTracker = self._load_tracker_class()
         tracker = ActivityTracker()
@@ -381,3 +382,11 @@ class ActivityTrackerTests(SimpleTestCase):
                 duration_seconds=1800,
             ),
         )
+
+
+class CollectActivityCommandTests(SimpleTestCase):
+    @mock.patch("journal.management.commands.collect_activity.run_collector")
+    def test_collect_activity_command_delegates_to_run_collector(self, mock_run_collector):
+        call_command("collect_activity")
+
+        mock_run_collector.assert_called_once_with()
