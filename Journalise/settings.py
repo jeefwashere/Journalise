@@ -60,6 +60,12 @@ SOCIALACCOUNT_PROVIDERS = {
     "google": {"SCOPE": ["profile", "email"], "AUTH_PARAMS": {"access_type": "online"}}
 }
 
+GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
+JOURNALISE_ACCESS_TOKEN_SECONDS = int(
+    os.getenv("JOURNALISE_ACCESS_TOKEN_SECONDS", "3600")
+)
+JOURNALISE_JWT_ISSUER = os.getenv("JOURNALISE_JWT_ISSUER", "Journalise")
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",

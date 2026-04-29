@@ -3,7 +3,6 @@ from rest_framework import serializers
 
 from .models import UserProfile
 
-
 User = get_user_model()
 
 
@@ -77,3 +76,7 @@ class UserSerializer(serializers.ModelSerializer):
             profile.save()
 
         return instance
+
+
+class GoogleLoginSerializer(serializers.Serializer):
+    id_token = serializers.CharField()
