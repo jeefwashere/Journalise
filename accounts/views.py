@@ -8,7 +8,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from .authentication import BearerTokenAuthentication
 from .models import UserProfile
-from .serializers import *
+from .serializers import (
+    GoogleLoginSerializer,
+    LoginSerializer,
+    RegisterSerializer,
+    UserSerializer,
+)
 from .tokens import create_access_token
 
 GOOGLE_CERTS_URL = "https://www.googleapis.com/oauth2/v3/certs"

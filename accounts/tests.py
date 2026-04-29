@@ -133,7 +133,12 @@ class GoogleLoginViewTests(TestCase):
         user = User.objects.get(email="google@example.com")
 
         self.assertEqual(data["token_type"], "Bearer")
-        self.assertIn("access_token", data)
+        self.assertIn("access_token", response.cookies)
+
+        cookie = response.cookies["access_token"]
+        self.assertTrue(cookie["httponly"])
+        self.assertEqual(cookie["samesite"], "Lax")
+
         self.assertEqual(data["expires_in"], 1800)
         self.assertEqual(data["user"]["sub"], str(user.pk))
         self.assertEqual(user.username, "google")
