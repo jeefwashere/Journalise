@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "stats",
     "summary",
     "tracking",
+    "oauth2_provider",
 ]
 
 MIDDLEWARE = [
