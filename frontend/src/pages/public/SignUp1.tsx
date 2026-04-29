@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/public/signup.css";
-import placeholder from "../assets/placeholder.jpg";
+import "../../styles/public/signup.css";
+import placeholder from "../../assets/placeholder.jpg";
 
 type CloudConfig = {
   top: number;

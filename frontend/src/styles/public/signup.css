@@ -37,7 +37,7 @@ body {
 .sky {
   position: absolute;
   inset: 0;
-  background: linear-gradient(175deg, #4fbdff 0%, #a8dcf8 55%, #d6effc 100%);
+  background: linear-gradient(175deg, #1499eb 0%, #a8dcf8 55%, #d6effc 100%);
   overflow: hidden;
 }
 
