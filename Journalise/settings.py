@@ -53,7 +53,6 @@ INSTALLED_APPS = [
     "pets",
     "stats",
     "summary",
-    "tracking",
 ]
 
 SOCIALACCOUNT_PROVIDERS = {
