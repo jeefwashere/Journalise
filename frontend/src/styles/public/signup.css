@@ -1,0 +1,582 @@
+@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
+
+
+/* ─── RESET / BASE ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+
+body {
+  font-family: 'Patrick Hand', cursive;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+
+/* ─── WRAPPER ───────────────────────────────────────── */
+.signup-wrapper {
+  width: 100%;
+}
+
+
+/* ─── SHARED PAGE ───────────────────────────────────── */
+.page {
+  min-height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+
+/* ─── PAGE 1 · SKY ──────────────────────────────────── */
+.page-sky {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(175deg, #4fbdff 0%, #a8dcf8 55%, #d6effc 100%);
+  overflow: hidden;
+}
+
+
+/* ─── CLOUDS ────────────────────────────────────────── */
+.cloud {
+  position: absolute;
+  left: -220px;
+  width: 180px;
+  height: 64px;
+
+
+  animation-name: moveClouds;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+
+
+  /* doodle feel */
+  filter: drop-shadow(2px 3px 0px rgba(120,180,230,0.35));
+}
+
+
+/* Main cloud body */
+.cloud-body {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 42px;
+  background: #fff;
+  border-radius: 40px;
+}
+
+
+.cloud-bump {
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+}
+
+
+.cloud-bump--sm  { width: 70px;  height: 52px;  bottom: 24px; left: 14px; }
+.cloud-bump--lg  { width: 76px;  height: 67px;  bottom: 28px; left: 52px; }
+.cloud-bump--md  { width: 56px;  height: 50px;  bottom: 22px; left: 112px; }
+
+
+@keyframes moveClouds {
+  from { left: -220px; }
+  to   { left: 110%;  }
+}
+
+
+/* ─── JOURNAL CARD ──────────────────────────────────── */
+.journal {
+  position: relative;
+  z-index: 10;
+  width: min(92%, 460px);
+  background: #fffee6;
+  border-radius: 4px;
+  padding: 32px;
+  box-shadow:
+    0 2px 0 #d4c9a8,
+    0 4px 0 #c9bda0,
+    0 6px 0 #bfb396,
+    0 10px 30px rgba(0,0,0,0.18),
+    inset 0 0 60px rgba(255,248,220,0.4);
+
+
+  border-radius: 20px
+
+
+}
+
+
+
+
+/* Actual content sits above rules */
+.journal-content {
+  position: relative;
+}
+
+
+/* ─── TITLE ─────────────────────────────────────────── */
+.title {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 2.6rem;
+  color: #2d2d2d;
+  text-align: center;
+  margin-bottom: 22px;
+  letter-spacing: 0.02em;
+
+
+}
+
+
+/* ─── FORM ──────────────────────────────────────────── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+
+.form label {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 1.15rem;
+  color: #1a1a1a;        /* black, as requested */
+  text-align: left;
+  margin-top: 12px;
+  margin-bottom: 3px;
+}
+
+
+.form input {
+  font-family: 'Patrick Hand', cursive;
+  padding: 9px 12px;
+  border: 1.5px solid #c5bfa8;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.75);
+  font-size: 1.15rem;
+  color: #2d2d2d;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+}
+
+
+.form input:focus {
+  border-color: #6fb3e0;
+  box-shadow: 0 0 0 3px rgba(111,179,224,0.2);
+}
+
+
+.form input::placeholder {
+  color: #bbb;
+}
+
+
+.error {
+  font-family: 'Patrick Hand', cursive;
+  color: #d04040;
+  font-size: 0.95rem;
+  min-height: 14px;
+  line-height: 1.2;
+}
+
+
+/* ─── BUTTONS (sketchbook style) ─────────────────────── */
+.btn {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 1.2rem;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 11px 16px;
+  transition: transform 0.12s, box-shadow 0.12s;
+  position: relative;
+}
+
+
+/* Sketchbook: offset shadow + rough border */
+.btn-signup {
+  margin-top: 20px;
+  background: #fff;
+  color: #2d5f8a;
+  border: 2.5px solid #2d5f8a;
+  box-shadow: 3px 3px 0 #2d5f8a;
+  letter-spacing: 0.03em;
+}
+
+
+.btn-signup:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #2d5f8a;
+}
+
+
+.btn-signup:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #2d5f8a;
+}
+
+
+.btn-google {
+  background: #fff;
+  color: #444;
+  border: 2px solid #bbb;
+  box-shadow: 3px 3px 0 #bbb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+
+.btn-google:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #bbb;
+  border-color: #999;
+}
+
+
+.btn-google:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #bbb;
+}
+
+
+.google-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+
+/* ─── DIVIDER ────────────────────────────────────────── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 6px;
+  color: #aaa;
+  font-size: 1rem;
+}
+
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #d8d0c0;
+}
+
+
+/* ─── LOGIN LINK ─────────────────────────────────────── */
+.login-link {
+  font-family: 'Patrick Hand', cursive;
+  text-align: center;
+  font-size: 0.98rem;
+  color: #888;
+  margin-top: 14px;
+}
+
+
+.login-link a {
+  color: #4a90c4;
+  text-decoration: none;
+  border-bottom: 1px dashed #4a90c4;
+}
+
+
+.login-link a:hover {
+  color: #2d6ea0;
+}
+
+
+/* ─── PAGE 2 · GRASSY HILL ───────────────────────────── */
+.page-grass {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  
+  background: linear-gradient(
+    to bottom,
+    #d1edfc 0%,
+    #d1edfc 48%,
+    #8fcfae 50%,
+    #5aab47 52%,
+    #5aab47 100%
+  );
+
+
+  overflow-x: hidden;
+}
+
+
+.sky-peek {
+  height: 18vh;
+  background: linear-gradient(to right, #d0edfc, #d6effc);
+  flex-shrink: 0;
+}
+
+
+.hills {
+  position: relative;
+  height: 70vh;
+  overflow: hidden;
+}
+
+
+.hill--back {
+  position: absolute;
+  bottom: -35vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160vw;
+  height: 100vh;
+
+
+  background: #6dc558;
+  border-radius: 50%;
+}
+
+
+.hill--front {
+  position: absolute;
+  bottom: -45vh;
+  left: 50%;
+  transform: translateX(-50%);
+
+
+  width: 140vw;
+  height: 80vh;
+
+
+  background: #5aab47;
+  border-radius: 50%;
+
+
+  box-shadow:
+    inset 0 20px 60px rgba(80,160,60,0.5),
+    inset 0 -10px 30px rgba(40,100,30,0.3);
+}
+
+
+/* ─── HILL CARD ──────────────────────────────────────── */
+.hill-card {
+  width: min(90%, 500px);
+  padding: 10px 24px;
+
+
+  background: #fffee6;
+  border-radius: 12px;
+
+
+  text-align: center;
+
+
+  box-shadow:
+    0 2px 0 #d4c9a8,
+    0 4px 0 #c9bda0,
+    0 6px 0 #bfb396,
+    0 10px 30px rgba(0,0,0,0.2);
+
+
+  margin-bottom: 30px;
+}
+
+
+.hill-title {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 2.4rem;
+  color: #2d2d2d;
+  text-align: center;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+
+.hill-subtitle {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 1.1rem;
+  color: #2d2d2d;
+  text-align: center;
+  margin-bottom: 24px;
+  font-style: italic;
+}
+
+
+
+
+/* ─── PET GRID ───────────────────────────────────────── */
+.pet-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+
+
+  transition: transform 0.2s ease;
+}
+
+
+/* hover = lift */
+.pet-btn:hover {
+  transform: translateY(-10px) scale(1.05);
+}
+
+
+/* selected */
+.pet-btn--selected {
+  transform: translateY(-12px) scale(1.08);
+  filter: drop-shadow(0 0 0 3px #2d5f8a);
+}
+.pet-placeholder {
+  font-size: 2.4rem;
+  line-height: 1;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f0e8;
+  border-radius: 8px;
+}
+
+
+.pet-img {
+  width: 140px;
+  height: 140px;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+
+/* ─── PET NAME SECTION ───────────────────────────────── */
+.pet-name-section {
+  margin-top: 25px;
+
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+
+
+  animation: fadeSlideUp 0.3s ease;
+}
+
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+
+.pet-name-label {
+  font-family: 'Patrick Hand', cursive;
+  font-size: 1.15rem;
+  color: #1a1a1a;
+  text-align: left;
+}
+
+
+.pet-name-section input {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1.5px solid #c5bfa8;
+  font-family: 'Patrick Hand', cursive;
+  font-size: larger
+}
+
+
+.pet-name-input:focus {
+  border-color: #6fb3e0;
+  box-shadow: 0 0 0 3px rgba(111,179,224,0.2);
+}
+
+
+.pet-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+
+
+  gap: 50px;             
+  margin-top: 50px;
+
+
+  width: 100%;
+  max-width: 900px;     
+}
+
+
+.pet-name-input::placeholder { color: #bbb; }
+
+
+.btn-letsgo {
+  margin-top: 14px;
+  background: #fff;
+  color: #3a7d44;
+  border: 2.5px solid #3a7d44;
+  box-shadow: 3px 3px 0 #3a7d44;
+  font-size: 1.2rem;
+  letter-spacing: 0.03em;
+  padding: 11px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Patrick Hand', cursive;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+
+.btn-letsgo:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: 1px 1px 0 #3a7d44;
+}
+
+
+.btn-letsgo:hover  { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 #3a7d44; }
+.btn-letsgo:active { transform: translate(2px,2px);   box-shadow: 1px 1px 0 #3a7d44; }
+
+
+.grass-content {
+  position: relative;
+  z-index: 2;
+
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+
+   margin-top: -80vh;
+}
+
+.back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 9999;
+  padding: 10px 16px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 1.1rem;
+  background: #fff;
+  color: #2d5f8a;
+  border: 2.5px solid #2d5f8a;
+  border-radius: 8px;
+  box-shadow: 3px 3px 0 #2d5f8a;
+  cursor: pointer;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.back-button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #2d5f8a;
+}
+
+.back-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 #2d5f8a;
+}
