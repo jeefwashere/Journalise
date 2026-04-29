@@ -159,10 +159,6 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        username = serializer.validated_data["username"]
-        email = serializer.validated_data["email"]
-        password = serializer.validated_data["password"]
-
         user = serializer.save()
 
         access_token, _ = create_access_token(user)
