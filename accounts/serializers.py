@@ -1,16 +1,48 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from pets.models import Pet
+from pets.serializers import PetSerializer
+
 from .models import UserProfile
 
 User = get_user_model()
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    current_pet = PetSerializer(read_only=True)
+    current_pet_id = serializers.PrimaryKeyRelatedField(
+        source="current_pet",
+        queryset=Pet.objects.all(),
+        required=False,
+        allow_null=True,
+        write_only=True,
+    )
+    pet_mood_display = serializers.CharField(
+        source="get_pet_mood_display", read_only=True
+    )
+
     class Meta:
         model = UserProfile
-        fields = ("display_name", "avatar_url", "created_at", "updated_at")
-        read_only_fields = ("created_at", "updated_at")
+        fields = (
+            "display_name",
+            "pet_level",
+            "current_pet",
+            "current_pet_id",
+            "pet_mood",
+            "pet_mood_display",
+            "avatar_url",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "pet_level",
+            "current_pet",
+            "pet_mood",
+            "pet_mood_display",
+            "created_at",
+            "updated_at",
+        )
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -63,6 +95,32 @@ class UserSerializer(serializers.ModelSerializer):
             return user.profile.avatar_url
 
         return ""
+
+    def validate(self, attrs):
+        profile_data = attrs.get("profile")
+        selected_pet = None
+
+        if profile_data:
+            selected_pet = profile_data.get("current_pet")
+
+        if selected_pet is not None:
+            profile = getattr(self.instance, "profile", None)
+            pet_level = (
+                profile.pet_level
+                if profile is not None
+                else UserProfile._meta.get_field("pet_level").default
+            )
+
+            if selected_pet.level > pet_level:
+                raise serializers.ValidationError(
+                    {
+                        "profile": {
+                            "current_pet_id": "Selected pet is above the user's pet level."
+                        }
+                    }
+                )
+
+        return attrs
 
     def update(self, instance, validated_data):
         profile_data = validated_data.pop("profile", None)
