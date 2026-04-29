@@ -7,12 +7,20 @@ from unittest.mock import patch
 from .models import UserProfile
 from .serializers import UserSerializer
 from .tokens import create_access_token
+from pets.choices import PetMood
+from pets.models import Pet
 
 User = get_user_model()
 
 
 class UserSerializerTests(TestCase):
     def test_serializes_oauth_safe_user_fields(self):
+        pet = Pet.objects.create(
+            pet_type=Pet.PetType.CAT,
+            level=1,
+            name="Nova",
+            svg_path="pets/cat-1.svg",
+        )
         user = User.objects.create_user(
             username="test",
             email="test@example.com",
@@ -23,6 +31,7 @@ class UserSerializerTests(TestCase):
         UserProfile.objects.create(
             user=user,
             display_name="Test S.",
+            current_pet=pet,
             avatar_url="https://example.com/avatar.png",
         )
 
@@ -32,11 +41,24 @@ class UserSerializerTests(TestCase):
         self.assertEqual(data["preferred_username"], "test")
         self.assertEqual(data["name"], "Test S.")
         self.assertEqual(data["picture"], "https://example.com/avatar.png")
+        self.assertEqual(data["profile"]["pet_level"], 1)
+        self.assertEqual(data["profile"]["current_pet"]["id"], pet.pk)
+        self.assertEqual(data["profile"]["current_pet"]["name"], "Nova")
+        self.assertEqual(data["profile"]["current_pet"]["mood"], PetMood.NEUTRAL)
+        self.assertEqual(data["profile"]["pet_mood"], PetMood.NEUTRAL)
+        self.assertEqual(data["profile"]["pet_mood_display"], "Neutral")
+        self.assertNotIn("current_pet_id", data["profile"])
         self.assertNotIn("password", data)
         self.assertNotIn("is_staff", data)
         self.assertNotIn("is_superuser", data)
 
     def test_updates_nested_profile(self):
+        pet = Pet.objects.create(
+            pet_type=Pet.PetType.DOG,
+            level=1,
+            name="Orbit",
+            svg_path="pets/dog-1.svg",
+        )
         user = User.objects.create_user(username="sam", password="secret-pass")
 
         serializer = UserSerializer(
@@ -45,6 +67,7 @@ class UserSerializerTests(TestCase):
                 "first_name": "Sam",
                 "profile": {
                     "display_name": "Sammy",
+                    "current_pet_id": pet.pk,
                     "avatar_url": "https://example.com/sam.png",
                 },
             },
@@ -57,7 +80,27 @@ class UserSerializerTests(TestCase):
         user.refresh_from_db()
         self.assertEqual(user.first_name, "Sam")
         self.assertEqual(user.profile.display_name, "Sammy")
+        self.assertEqual(user.profile.current_pet, pet)
         self.assertEqual(user.profile.avatar_url, "https://example.com/sam.png")
+
+    def test_rejects_current_pet_above_users_pet_level(self):
+        locked_pet = Pet.objects.create(
+            pet_type=Pet.PetType.FROG,
+            level=2,
+            name="Ripple",
+            svg_path="pets/frog-2.svg",
+        )
+        user = User.objects.create_user(username="lee", password="secret-pass")
+        UserProfile.objects.create(user=user, pet_level=1)
+
+        serializer = UserSerializer(
+            user,
+            data={"profile": {"current_pet_id": locked_pet.pk}},
+            partial=True,
+        )
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("profile", serializer.errors)
 
 
 class CurrentUserViewTests(TestCase):
