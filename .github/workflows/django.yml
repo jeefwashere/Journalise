@@ -33,6 +33,7 @@ jobs:
       DB_PORT: 5432
       DJANGO_SETTINGS_MODULE: config.settings
       GEMINI_API_KEY: "fake-key-for-ci"
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
     - uses: actions/checkout@v4
