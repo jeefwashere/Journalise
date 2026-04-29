@@ -1,0 +1,171 @@
+.landing-page {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--dark);
+  font-family: "Comic Sans MS", "Trebuchet MS", sans-serif;
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+}
+
+.landing-navbar {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 18px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 3px solid #1f2937;
+  border-radius: 22px;
+  background: #fffaf0;
+  box-shadow: 6px 6px 0 #1f2937;
+}
+
+.logo-box {
+  font-size: 26px;
+  font-weight: 800;
+  border: 3px solid #1f2937;
+  border-radius: 18px;
+  padding: 8px 18px;
+  background: white;
+}
+
+.nav-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.sketch-button {
+  text-decoration: none;
+  color: #1f2937;
+  background: var(--primary);
+  border: 3px solid #1f2937;
+  border-radius: 16px;
+  padding: 10px 18px;
+  font-weight: 700;
+  box-shadow: 4px 4px 0 #1f2937;
+  transition: 0.15s ease;
+}
+
+.sketch-button:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 #1f2937;
+}
+
+.sketch-button.filled {
+  background: #9ee7d7;
+}
+
+.sketch-button.large {
+  font-size: 18px;
+  padding: 14px 22px;
+}
+
+.landing-content {
+  max-width: 1100px;
+  margin: 70px auto 0;
+}
+
+.hero-card {
+  background: #fffaf0;
+  border: 4px solid #1f2937;
+  border-radius: 32px;
+  padding: 56px;
+  text-align: center;
+  box-shadow: 10px 10px 0 #1f2937;
+}
+
+.eyebrow {
+  display: inline-block;
+  background: #facc15;
+  border: 3px solid #1f2937;
+  border-radius: 999px;
+  padding: 8px 16px;
+  font-weight: 800;
+}
+
+.hero-card h1 {
+  font-size: 60px;
+  margin: 24px 0 12px;
+}
+
+.hero-text {
+  font-size: 22px;
+  max-width: 760px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.hero-buttons {
+  margin-top: 34px;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.features-grid {
+  margin-top: 46px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.feature-card {
+  background: #ffffff;
+  border: 3px solid #1f2937;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 6px 6px 0 #1f2937;
+}
+
+.feature-card h3 {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.feature-card p {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.doodle {
+  position: absolute;
+  font-size: 54px;
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.doodle-one {
+  top: 190px;
+  left: 70px;
+}
+
+.doodle-two {
+  right: 90px;
+  top: 270px;
+}
+
+.doodle-three {
+  bottom: 90px;
+  left: 120px;
+}
+
+@media (max-width: 800px) {
+  .landing-navbar {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .hero-card {
+    padding: 34px 22px;
+  }
+
+  .hero-card h1 {
+    font-size: 40px;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+}
