@@ -1,15 +1,14 @@
 import jwt
 from django.conf import settings
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from django.utils.text import slugify
-from rest_framework import generics, permissions, serializers
+from rest_framework import generics, permissions, serializers, status
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
 from .authentication import BearerTokenAuthentication
 from .models import UserProfile
-from .serializers import UserSerializer, GoogleLoginSerializer
+from .serializers import *
 from .tokens import create_access_token
 
 GOOGLE_CERTS_URL = "https://www.googleapis.com/oauth2/v3/certs"
@@ -129,6 +128,7 @@ def get_or_create_google_user(google_payload):
     return user
 
 
+# Google Login/Register view
 class GoogleLoginView(APIView):
     authentication_classes = []
     permission_classes = [permissions.AllowAny]
@@ -148,6 +148,38 @@ class GoogleLoginView(APIView):
                 "expires_in": settings.JOURNALISE_ACCESS_TOKEN_SECONDS,
                 "user": UserSerializer(user).data,
             }
+        )
+
+
+class LoginView(APIView):
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        username = serializer.validated_data["username"]
+        password = serializer.validated_data["password"]
+
+        user = authenticate(username=username, password=password)
+
+        if not user:
+            return Response(
+                {"detail": "Invalid username or password."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        access_token, _ = create_access_token(user)
+
+        return Response(
+            {
+                "access_token": access_token,
+                "token_type": "Bearer",
+                "expires_in": settings.JOURNALISE_ACCESS_TOKEN_SECONDS,
+                "user": UserSerializer(user).data,
+            },
+            status=status.HTTP_201_CREATED,
         )
 
 

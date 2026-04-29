@@ -80,3 +80,36 @@ class UserSerializer(serializers.ModelSerializer):
 
 class GoogleLoginSerializer(serializers.Serializer):
     id_token = serializers.CharField()
+
+
+class LoginSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=255, allow_blank=False)
+    password = serializers.CharField(write_only=True)
+
+
+class RegisterSerializer(serializers.Serializer):
+    username = serializers.CharField(max_length=255, allow_blank=False)
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True)
+
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError("Username already exists")
+        return value
+
+    def validate_email(self, value):
+        value = value.lower().strip()
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email already in use")
+        return value
+
+    def validate_password(self, value):
+        self.validate_password(value)
+        return value
+
+    def create(self, validated_data):
+        return User.objects.create(
+            username=validated_data["username"],
+            email=validated_data["email"],
+            password=validated_data["password"],
+        )
