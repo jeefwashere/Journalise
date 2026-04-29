@@ -14,9 +14,9 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: journalise_test
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: "Journalise"
+          POSTGRES_USER: "postgres"
+          POSTGRES_PASSWORD: "Madfox123!"
         ports:
           - 5432:5432
         options: >-
@@ -26,9 +26,9 @@ jobs:
     env:
       SECRET_KEY: test-secret-key-for-ci
       DEBUG: "False"
-      DB_NAME: Journalise
-      DB_USER: postgres
-      DB_PASSWORD: Madfox123!
+      DB_NAME: "Journalise"
+      DB_USER: "postgres"
+      DB_PASSWORD: "Madfox123!"
       DB_HOST: localhost
       DB_PORT: 5432
       DJANGO_SETTINGS_MODULE: Journalise.settings
