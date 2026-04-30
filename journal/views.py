@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from accounts.authentication import BearerTokenAuthentication
 from journal.activity_ingest import persist_sessions
-from journal.tracking_runtime import start_tracking, stop_tracking
+from journal.tracking_runtime import get_tracking_status, start_tracking, stop_tracking
 
 
 class CreateActivityList(generics.ListCreateAPIView):
@@ -41,6 +41,9 @@ class GetActivityDetail(generics.RetrieveUpdateDestroyAPIView):
 class ActivityTrackingView(APIView):
     authentication_classes = [BearerTokenAuthentication, SessionAuthentication]
     permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response(get_tracking_status(request.user), status=status.HTTP_200_OK)
 
     def post(self, request):
         sessions = request.data.get("sessions")

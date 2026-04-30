@@ -1,58 +1,112 @@
+import threading
 from dataclasses import dataclass
 
 from django.conf import settings
+from django.db import close_old_connections
 from django.utils import timezone
 
-from journal.activity_ingest import persist_session
-from journal.activity_tracker import ActivityTracker
+from journal.active_window import get_active_window
+from journal.activity_ingest import create_activity_from_window_for_user_id
 from summary.services import generate_daily_summary
 
 
-LOCAL_TRACKER_APP_NAME = "Journalise local tracker"
-LOCAL_TRACKER_BUNDLE_ID = "journalise.local.tracker"
+TRACKING_INTERVAL_SECONDS = 5.0
 
 
 @dataclass
 class TrackingState:
-    tracker: ActivityTracker
+    stop_event: threading.Event
+    worker: threading.Thread
     started_at: object
 
 
 _ACTIVE_TRACKERS: dict[int, TrackingState] = {}
+_TRACKERS_LOCK = threading.Lock()
 
 
-def start_tracking(user) -> dict:
+def get_tracking_status(user) -> dict:
     user_key = int(user.pk)
-    if user_key in _ACTIVE_TRACKERS:
-        state = _ACTIVE_TRACKERS[user_key]
+    with _TRACKERS_LOCK:
+        state = _ACTIVE_TRACKERS.get(user_key)
+
+    if state is None or not state.worker.is_alive():
         return {
-            "tracking": True,
-            "started_at": state.started_at.isoformat(),
-            "already_active": True,
+            "tracking": False,
+            "started_at": None,
+            "interval_seconds": TRACKING_INTERVAL_SECONDS,
         }
 
-    started_at = timezone.now()
-    tracker = ActivityTracker()
-    tracker.start_session(
-        LOCAL_TRACKER_APP_NAME,
-        LOCAL_TRACKER_BUNDLE_ID,
-        started_at,
-    )
-    _ACTIVE_TRACKERS[user_key] = TrackingState(
-        tracker=tracker,
-        started_at=started_at,
-    )
+    return {
+        "tracking": True,
+        "started_at": state.started_at.isoformat(),
+        "interval_seconds": TRACKING_INTERVAL_SECONDS,
+    }
+
+
+def _tracking_loop(user_id: int, interval: float, stop_event: threading.Event) -> None:
+    while not stop_event.is_set():
+        started_at = timezone.now()
+        try:
+            active_window = get_active_window()
+            if stop_event.wait(interval):
+                ended_at = timezone.now()
+            else:
+                ended_at = timezone.now()
+
+            close_old_connections()
+            create_activity_from_window_for_user_id(
+                user_id,
+                active_window.app_name,
+                active_window.window_title,
+                started_at,
+                ended_at,
+            )
+        except Exception as exc:
+            print(f"Error tracking active window: {exc}")
+            if stop_event.wait(interval):
+                break
+        finally:
+            close_old_connections()
+
+
+def start_tracking(user, interval: float = TRACKING_INTERVAL_SECONDS) -> dict:
+    user_key = int(user.pk)
+    with _TRACKERS_LOCK:
+        existing = _ACTIVE_TRACKERS.get(user_key)
+        if existing is not None and existing.worker.is_alive():
+            return {
+                "tracking": True,
+                "started_at": existing.started_at.isoformat(),
+                "already_active": True,
+                "interval_seconds": interval,
+            }
+
+        stop_event = threading.Event()
+        started_at = timezone.now()
+        worker = threading.Thread(
+            target=_tracking_loop,
+            args=(user_key, interval, stop_event),
+            daemon=True,
+        )
+        _ACTIVE_TRACKERS[user_key] = TrackingState(
+            stop_event=stop_event,
+            worker=worker,
+            started_at=started_at,
+        )
+        worker.start()
 
     return {
         "tracking": True,
         "started_at": started_at.isoformat(),
         "already_active": False,
+        "interval_seconds": interval,
     }
 
 
 def stop_tracking(user) -> dict:
     user_key = int(user.pk)
-    state = _ACTIVE_TRACKERS.pop(user_key, None)
+    with _TRACKERS_LOCK:
+        state = _ACTIVE_TRACKERS.pop(user_key, None)
 
     if state is None:
         return {
@@ -62,22 +116,21 @@ def stop_tracking(user) -> dict:
             "already_inactive": True,
         }
 
-    finished_session = state.tracker.finish_active_session(timezone.now())
-    activity = None
-    created = False
-    daily_summary = None
+    state.stop_event.set()
+    state.worker.join(timeout=TRACKING_INTERVAL_SECONDS + 2.0)
 
-    if finished_session is not None:
-        activity, created = persist_session(user, finished_session)
-        daily_summary = generate_daily_summary(
-            timezone.localdate(activity.started_at).isoformat(),
+    summary = None
+    try:
+        summary = generate_daily_summary(
+            timezone.localdate(timezone.now()).isoformat(),
             base_dir=settings.BASE_DIR / "data",
         )
+    except Exception as exc:
+        print(f"Error generating tracking summary: {exc}")
 
     return {
         "tracking": False,
-        "activity": activity,
-        "activity_created": created,
-        "summary": daily_summary,
+        "activity": None,
+        "summary": summary,
         "already_inactive": False,
     }

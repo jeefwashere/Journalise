@@ -1,6 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
+import { loginWithGoogle, preloadGoogleAuth } from "../../api/googleAuth";
 import "../../styles/public/signup.css";
 
 import pet1Default from "../../assets/Dogs/000.png";
@@ -55,8 +56,13 @@ const Signup: React.FC = () => {
   const [petNameError, setPetNameError] = useState("");
   const [signupError, setSignupError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   const secondPageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    preloadGoogleAuth().catch(() => undefined);
+  }, []);
 
   const validate = () => {
     const newErrors = { username: "", email: "", password: "", form: "" };
@@ -166,6 +172,26 @@ const Signup: React.FC = () => {
     }
   };
 
+  const handleGoogleSignup = async () => {
+    setGoogleLoading(true);
+    setSignupError("");
+    setErrors((currentErrors) => ({ ...currentErrors, form: "" }));
+
+    try {
+      await loginWithGoogle();
+      navigate("/dashboard");
+    } catch (error: any) {
+      setSignupError(
+        error.response?.data?.detail ||
+          error.response?.data?.code?.[0] ||
+          error.message ||
+          "Could not sign up with Google. Please try again.",
+      );
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   const clouds: CloudConfig[] = [
     { top: 10, duration: 70, delay: 10, scale: 1.1 },
     { top: 28, duration: 90, delay: 35, scale: 0.85 },
@@ -252,7 +278,11 @@ const Signup: React.FC = () => {
                 <span>or</span>
               </div>
 
-              <button className="btn btn-google">
+              <button
+                className="btn btn-google"
+                onClick={handleGoogleSignup}
+                disabled={loading || googleLoading}
+              >
                 <svg
                   className="google-icon"
                   viewBox="0 0 18 18"
@@ -275,8 +305,9 @@ const Signup: React.FC = () => {
                     fill="#EA4335"
                   />
                 </svg>
-                Sign up with Google
+                {googleLoading ? "Opening Google..." : "Sign up with Google"}
               </button>
+              <span className="error">{signupError}</span>
 
               <p className="login-link">
                 Already have an account? <a href="/login">Log in</a>

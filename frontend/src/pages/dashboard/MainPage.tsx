@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../styles/dashboard/MainPage.css";
 import TrackingToggle from "../../components/TrackingToggle";
+import { useTracking } from "../../contexts/TrackingContext";
 
 type CloudConfig = {
   top: number;
@@ -141,8 +142,7 @@ export default function MainPage() {
   const savedPet = useMemo(loadSavedPet, []);
   const [petType, setPetType] = useState(savedPet.petType);
   const [petLevel, setPetLevel] = useState(savedPet.petLevel);
-  const [isTracking, setIsTracking] = useState(false);
-  const [isTrackingPending, setIsTrackingPending] = useState(false);
+  const { isTracking, isTrackingPending, setTrackingEnabled } = useTracking();
   const [activePetState, setActivePetState] = useState<number | null>(null);
   const [earnedFlowerTypes, setEarnedFlowerTypes] = useState<number[]>([]);
 
@@ -252,32 +252,10 @@ export default function MainPage() {
   };
 
   const handleTrackingToggle = async (enabled: boolean) => {
-    const previousTracking = isTracking;
-    setIsTracking(enabled);
-    setIsTrackingPending(true);
-
     try {
-      const token = getToken();
-      const response = await fetch(`${API_BASE_URL}/api/journal/tracking/`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ enabled }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Tracking request failed");
-      }
-
-      const result = await response.json();
-      setIsTracking(Boolean(result.tracking));
+      await setTrackingEnabled(enabled);
     } catch {
-      setIsTracking(previousTracking);
-    } finally {
-      setIsTrackingPending(false);
+      // The shared tracking provider restores the previous value on failure.
     }
   };
 
@@ -285,6 +263,7 @@ export default function MainPage() {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("token");
     localStorage.removeItem("journaliseIsAuthenticated");
+    localStorage.removeItem("journaliseTracking");
     localStorage.removeItem(HOME_STATE_KEY);
     navigate("/login");
   };

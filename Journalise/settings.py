@@ -60,7 +60,14 @@ SOCIALACCOUNT_PROVIDERS = {
     "google": {"SCOPE": ["profile", "email"], "AUTH_PARAMS": {"access_type": "online"}}
 }
 
-GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "")
+GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID") or os.getenv(
+    "GOOGLE_CLIENT_ID",
+    "",
+)
+GOOGLE_OAUTH_CLIENT_SECRET = os.getenv("GOOGLE_OAUTH_CLIENT_SECRET") or os.getenv(
+    "GOOGLE_CLIENT_SECRET",
+    "",
+)
 JOURNALISE_ACCESS_TOKEN_SECONDS = int(
     os.getenv("JOURNALISE_ACCESS_TOKEN_SECONDS", "3600")
 )

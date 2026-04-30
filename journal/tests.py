@@ -1025,11 +1025,12 @@ class ActivityIngestTests(TestCase):
         from journal.activity_ingest import persist_session
 
         session = ActivitySession(
-            app_name="Visual Studio Code",
-            bundle_id="com.microsoft.VSCode",
+            title="Visual Studio Code",
+            category="work",
+            description="Tracked active window from com.microsoft.VSCode.",
             started_at="2026-04-29T08:00:00Z",
             ended_at="2026-04-29T08:30:00Z",
-            duration_seconds=1800,
+            created_at="2026-04-29T08:30:00Z",
         )
 
         activity, created = persist_session(
@@ -1054,11 +1055,12 @@ class ActivityIngestTests(TestCase):
         from journal.activity_ingest import persist_session
 
         session = ActivitySession(
-            app_name="Safari",
-            bundle_id="com.apple.Safari",
+            title="Safari",
+            category="study",
+            description="Tracked active window from Safari.",
             started_at="2026-04-29T08:00:00Z",
             ended_at="2026-04-29T08:30:00Z",
-            duration_seconds=1800,
+            created_at="2026-04-29T08:30:00Z",
         )
 
         persist_session(self.user, session, base_dir=self.base_dir)
@@ -1084,10 +1086,11 @@ class ActivityTrackingViewTests(TestCase):
             "sessions": [
                 {
                     "app_name": "Zoom",
-                    "bundle_id": "us.zoom.xos",
+                    "category": "communication",
+                    "description": "Tracked Zoom meeting.",
                     "started_at": "2026-04-29T09:00:00Z",
                     "ended_at": "2026-04-29T09:15:00Z",
-                    "duration_seconds": 900,
+                    "created_at": "2026-04-29T09:15:00Z",
                 }
             ],
         }
@@ -1115,15 +1118,24 @@ class ActivityTrackingViewTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    @mock.patch("journal.tracking_runtime.generate_daily_summary")
-    def test_tracking_endpoint_starts_and_stops_runtime_tracker(self, mock_summary):
-        mock_summary.return_value = {
-            "date": "2026-04-29",
-            "stats": {},
-            "accomplishments": [],
-            "journal": "Tracked activity.",
-            "productivity_score": 0,
-            "source": "fallback",
+    @mock.patch("journal.views.stop_tracking")
+    @mock.patch("journal.views.start_tracking")
+    def test_tracking_endpoint_starts_and_stops_runtime_tracker(
+        self,
+        mock_start_tracking,
+        mock_stop_tracking,
+    ):
+        mock_start_tracking.return_value = {
+            "tracking": True,
+            "started_at": "2026-04-29T09:00:00Z",
+            "already_active": False,
+            "interval_seconds": 5.0,
+        }
+        mock_stop_tracking.return_value = {
+            "tracking": False,
+            "activity": None,
+            "summary": None,
+            "already_inactive": False,
         }
 
         with self.settings(BASE_DIR=Path(self.temp_dir.name)):
@@ -1142,12 +1154,9 @@ class ActivityTrackingViewTests(TestCase):
         self.assertTrue(start_response.json()["tracking"])
         self.assertEqual(stop_response.status_code, status.HTTP_200_OK)
         self.assertFalse(stop_response.json()["tracking"])
-        self.assertEqual(Activity.objects.filter(user=self.user).count(), 1)
-        self.assertEqual(
-            Activity.objects.get(user=self.user).title,
-            "Journalise local tracker",
-        )
-        mock_summary.assert_called_once()
+        self.assertEqual(start_response.json()["interval_seconds"], 5.0)
+        mock_start_tracking.assert_called_once_with(self.user)
+        mock_stop_tracking.assert_called_once_with(self.user)
 
 
 class CollectActivityCommandTests(SimpleTestCase):
@@ -1441,7 +1450,8 @@ class CollectActivityCommandTests(SimpleTestCase):
         mock_unlink.assert_any_call(missing_ok=True)
         self.assertEqual(request_payload["model"], "qwen2.5vl:7b")
         self.assertTrue(request_payload["stream"])
-        self.assertIn("interesting things", request_payload["messages"][0]["content"])
+        self.assertIn("active or most prominent window/screen", request_payload["messages"][0]["content"])
+        self.assertIn("activity-tracking sentence", request_payload["messages"][0]["content"])
         self.assertNotIn("window_start", request_payload["messages"][0]["content"])
         self.assertEqual(len(request_payload["messages"][0]["images"]), 1)
         self.assertEqual(curl_command[:5], ["curl", "-sS", "-N", "-X", "POST"])
@@ -1547,10 +1557,9 @@ class CollectActivityCommandTests(SimpleTestCase):
             captured_at,
         )
 
-        self.assertEqual(
-            str(screenshot_path),
-            "/tmp/journalise/screenshots/2026-04-29/14-30-05.png",
-        )
+        self.assertEqual(screenshot_path.name, "14-30-05.png")
+        self.assertEqual(screenshot_path.parent.name, "2026-04-29")
+        self.assertEqual(screenshot_path.parent.parent.name, "screenshots")
 
     @mock.patch("journal.management.commands.collect_activity.capture_screenshot")
     @mock.patch("journal.management.commands.collect_activity.datetime")

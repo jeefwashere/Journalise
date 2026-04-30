@@ -1,4 +1,5 @@
 import jwt
+import requests
 from django.conf import settings
 from django.contrib.auth import get_user_model, authenticate
 from django.utils.text import slugify
@@ -18,6 +19,7 @@ from .tokens import create_access_token
 
 GOOGLE_CERTS_URL = "https://www.googleapis.com/oauth2/v3/certs"
 GOOGLE_ISSUERS = {"accounts.google.com", "https://accounts.google.com"}
+GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 
 
 def get_google_client_id():
@@ -63,6 +65,46 @@ def verify_google_id_token(id_token):
         raise serializers.ValidationError({"id_token": "Invalid Google issuer."})
 
     return payload
+
+
+def exchange_google_auth_code(code):
+    client_id = get_google_client_id()
+    client_secret = getattr(settings, "GOOGLE_OAUTH_CLIENT_SECRET", "")
+    if not client_id:
+        raise serializers.ValidationError(
+            {"code": "GOOGLE_OAUTH_CLIENT_ID is not configured."}
+        )
+    if not client_secret:
+        raise serializers.ValidationError(
+            {"code": "GOOGLE_OAUTH_CLIENT_SECRET is not configured."}
+        )
+
+    try:
+        response = requests.post(
+            GOOGLE_TOKEN_URL,
+            data={
+                "code": code,
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "redirect_uri": "postmessage",
+                "grant_type": "authorization_code",
+            },
+            timeout=10,
+        )
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        raise serializers.ValidationError(
+            {"code": "Could not exchange Google authorization code."}
+        ) from exc
+
+    token_payload = response.json()
+    id_token = token_payload.get("id_token")
+    if not isinstance(id_token, str) or not id_token:
+        raise serializers.ValidationError(
+            {"code": "Google token response did not include an ID token."}
+        )
+
+    return verify_google_id_token(id_token)
 
 
 def is_verified_email(value):
@@ -166,11 +208,29 @@ class GoogleLoginView(APIView):
         serializer = GoogleLoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        google_payload = verify_google_id_token(serializer.validated_data["id_token"])
+        if serializer.validated_data.get("code"):
+            google_payload = exchange_google_auth_code(serializer.validated_data["code"])
+        else:
+            google_payload = verify_google_id_token(serializer.validated_data["id_token"])
         user = get_or_create_google_user(google_payload)
         access_token, _ = create_access_token(user)
 
         return auth_response(user, access_token, status.HTTP_200_OK)
+
+
+class GoogleConfigView(APIView):
+    authentication_classes = []
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        client_id = get_google_client_id()
+        if not client_id:
+            return Response(
+                {"detail": "GOOGLE_OAUTH_CLIENT_ID is not configured."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
+
+        return Response({"client_id": client_id}, status=status.HTTP_200_OK)
 
 
 class RegisterView(APIView):

@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
+import { loginWithGoogle, preloadGoogleAuth } from "../../api/googleAuth";
 import "../../styles/public/login.css";
 
 const Login: React.FC = () => {
@@ -15,6 +16,11 @@ const Login: React.FC = () => {
   });
   const [formError, setFormError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    preloadGoogleAuth().catch(() => undefined);
+  }, []);
 
   const validate = () => {
     const newErrors = { username: "", password: "", form: "" };
@@ -57,6 +63,25 @@ const Login: React.FC = () => {
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setGoogleLoading(true);
+    setFormError("");
+
+    try {
+      await loginWithGoogle();
+      navigate("/dashboard");
+    } catch (error: any) {
+      setFormError(
+        error.response?.data?.detail ||
+          error.response?.data?.code?.[0] ||
+          error.message ||
+          "Could not log in with Google. Please try again.",
+      );
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -128,7 +153,11 @@ const Login: React.FC = () => {
                 <span>or</span>
               </div>
 
-              <button className="btn btn-google">
+              <button
+                className="btn btn-google"
+                onClick={handleGoogleLogin}
+                disabled={loading || googleLoading}
+              >
                 <svg
                   className="google-icon"
                   viewBox="0 0 18 18"
@@ -151,7 +180,7 @@ const Login: React.FC = () => {
                     fill="#EA4335"
                   />
                 </svg>
-                Log in with Google
+                {googleLoading ? "Opening Google..." : "Log in with Google"}
               </button>
 
               <p className="login-link">

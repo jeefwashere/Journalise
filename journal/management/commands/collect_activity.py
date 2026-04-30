@@ -27,6 +27,17 @@ DEFAULT_ACTIVITY_INTERVAL = 10.0
 DEFAULT_SCREENSHOT_INTERVAL = 300.0
 DEFAULT_VISION_IMAGE_MAX_DIMENSION = 768
 JSON_INDENT = 2
+VISION_ACTIVITY_PROMPT = (
+    "You are analyzing a desktop screenshot for a private activity journal. "
+    "Identify the active or most prominent window/screen, any visible app, tab, "
+    "document, project, or page names, and the likely activity being performed. "
+    "Base the answer only on visible evidence in the image. "
+    "Avoid transcribing private message bodies, emails, secrets, or long IDs. "
+    'Return valid JSON only with exactly this key: {"summary":"..."}. '
+    "Write one concise activity-tracking sentence, for example: "
+    "'Active window appears to be VS Code editing journal/activity_tracker.py, "
+    "with a browser documentation tab visible in the background.'"
+)
 
 
 def build_screenshot_path(base_dir: str, captured_at: datetime) -> Path:
@@ -158,11 +169,7 @@ def request_vision_summary(
             "messages": [
                 {
                     "role": "user",
-                    "content": (
-                        "Tell me the fun or interesting things happening in this screenshot. "
-                        'Return valid JSON only with exactly this key: {"summary":"..."}. '
-                        "Keep the summary short and concrete."
-                    ),
+                    "content": VISION_ACTIVITY_PROMPT,
                     "images": images,
                 }
             ],
