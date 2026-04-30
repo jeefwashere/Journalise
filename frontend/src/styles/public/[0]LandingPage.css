@@ -163,10 +163,18 @@ h1 {
 
 .doodle {
   position: absolute;
-  font-size: clamp(2.2rem, 5vw, 4.5rem);
+  width: clamp(45px, 7vw, 85px);
+  height: clamp(45px, 7vw, 85px);
   opacity: 0.85;
   animation: floaty 4.5s ease-in-out infinite;
   user-select: none;
+}
+
+.doodle img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 
 .cat {
@@ -194,6 +202,7 @@ h1 {
 }
 
 @keyframes floaty {
+
   0%,
   100% {
     translate: 0 0;
@@ -244,6 +253,7 @@ h1 {
 }
 
 @keyframes buttonBob {
+
   0%,
   100% {
     translate: 0 0;
