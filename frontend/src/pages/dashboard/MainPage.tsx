@@ -3,12 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import "../../styles/dashboard/MainPage.css";
 import TrackingToggle from "../../components/TrackingToggle";
 import { useTracking } from "../../contexts/TrackingContext";
-import {
-  getPetImage,
-  petTypeToIndex,
-  profilePetLevel,
-  type UserProfilePet,
-} from "../../utils/petDisplay";
+import { useUserPet } from "../../hooks/useUserPet";
+import { getPetImage } from "../../utils/petDisplay";
 
 type CloudConfig = {
   top: number;
@@ -21,11 +17,6 @@ type ApiStat = {
   category: string;
   category_display: string;
   total_minutes: number;
-};
-
-type HomePet = {
-  petType: number;
-  petLevel: number;
 };
 
 type Flower = {
@@ -68,27 +59,9 @@ function getToken() {
   return token;
 }
 
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
 function seededUnit(seed: number) {
   const value = Math.sin(seed * 12.9898) * 43758.5453;
   return value - Math.floor(value);
-}
-
-function loadSavedPet(): HomePet {
-  try {
-    const raw = localStorage.getItem(HOME_STATE_KEY);
-    const saved = raw ? JSON.parse(raw) : null;
-
-    return {
-      petType: clamp(Number(saved?.petType ?? 0), 0, 3),
-      petLevel: clamp(Number(saved?.petLevel ?? 1), 1, 3),
-    };
-  } catch {
-    return { petType: 0, petLevel: 1 };
-  }
 }
 
 function makeFlowerPatch(types: number[]) {
@@ -125,51 +98,13 @@ function getFlowerImage(type: number) {
 
 export default function MainPage() {
   const navigate = useNavigate();
-  const savedPet = useMemo(loadSavedPet, []);
-  const [petType, setPetType] = useState(savedPet.petType);
-  const [petLevel, setPetLevel] = useState(savedPet.petLevel);
+  const userPet = useUserPet();
   const { isTracking, isTrackingPending, setTrackingEnabled } = useTracking();
   const [activePetState, setActivePetState] = useState<number | null>(null);
   const [earnedFlowerTypes, setEarnedFlowerTypes] = useState<number[]>([]);
 
   const defaultPetState = isTracking ? 1 : 0;
   const petState = activePetState ?? defaultPetState;
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadUser() {
-      try {
-        const token = getToken();
-        const response = await fetch(`${API_BASE_URL}/api/auth/me/`, {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!response.ok) return;
-
-        const user: { profile?: UserProfilePet } = await response.json();
-        const nextPetType = petTypeToIndex(user?.profile?.current_pet?.pet_type);
-        const nextPetLevel = profilePetLevel(user?.profile);
-
-        if (isMounted) {
-          setPetType(clamp(nextPetType, 0, 3));
-          setPetLevel(nextPetLevel);
-        }
-      } catch {
-        // Local signup state is enough until the account endpoint is available.
-      }
-    }
-
-    loadUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -320,7 +255,7 @@ export default function MainPage() {
 
       <button className="home-pet-button" onClick={handlePetClick}>
         <img
-          src={getPetImage(petType, petLevel, petState)}
+          src={getPetImage(userPet.petTypeIndex, userPet.assetLevel, petState)}
           alt="Your pet"
           className="home-pet"
         />

@@ -3,7 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import "../../styles/dashboard/[5]StatsPage.css";
 
-import { getProfilePetImage, type UserProfilePet } from "../../utils/petDisplay";
+import { useUserPet } from "../../hooks/useUserPet";
+import { getPetImage } from "../../utils/petDisplay";
 
 import flowerStudy from "../../assets/Flowers/6.png";
 import flowerWork from "../../assets/Flowers/7.png";
@@ -60,7 +61,7 @@ export default function StatsPage() {
   const [selectedHour, setSelectedHour] = useState<HourPoint | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [flowerModal, setFlowerModal] = useState(false);
-  const [userProfile, setUserProfile] = useState<UserProfilePet | null>(null);
+  const userPet = useUserPet();
 
   useEffect(() => {
     async function loadStats() {
@@ -116,38 +117,6 @@ export default function StatsPage() {
 
     loadStats();
   }, [date]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadUserProfile() {
-      try {
-        const token = getToken();
-        const response = await fetch(`${API_BASE_URL}/auth/me/`, {
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-
-        if (!response.ok) return;
-
-        const user = await response.json();
-        if (isMounted) {
-          setUserProfile(user?.profile || null);
-        }
-      } catch {
-        if (isMounted) setUserProfile(null);
-      }
-    }
-
-    loadUserProfile();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const hourlyPoints = useMemo<HourPoint[]>(() => {
     const grouped = new Map<string, ApiStat[]>();
@@ -386,7 +355,10 @@ export default function StatsPage() {
             whileHover={{ y: -8, rotate: 2 }}
           >
             <div className="speech">Great day!</div>
-            <img src={getProfilePetImage(userProfile, 5)} alt="Your pet" />
+            <img
+              src={getPetImage(userPet.petTypeIndex, userPet.assetLevel, 5)}
+              alt={`${userPet.petName}, ${userPet.petLabel}`}
+            />
           </motion.div>
         </section>
       </main>

@@ -14,6 +14,10 @@ export type UserProfilePet = {
   current_pet?: CurrentPet | null;
 };
 
+export type PetStat = {
+  total_minutes: number;
+};
+
 const PET_FOLDERS = ["Dogs", "Cats", "Bunny"];
 const PET_LABELS = ["Dog", "Cat", "Bunny"];
 const PET_TYPE_TO_INDEX: Record<string, number> = {
@@ -47,9 +51,21 @@ export function getPetTypeLabel(value?: string) {
   return PET_LABELS[index] || "Pet";
 }
 
-export function profilePetLevel(profile?: UserProfilePet | null) {
-  const level = Number(profile?.pet_level ?? profile?.current_pet?.level ?? 1);
-  return clamp(Number.isFinite(level) ? level : 1, 1, 3);
+export function flowerCountFromStats(stats: PetStat[]) {
+  return stats.reduce(
+    (sum, item) => sum + Math.max(1, Math.round(item.total_minutes / 15)),
+    0,
+  );
+}
+
+export function petAssetLevelFromFlowerCount(flowerCount: number) {
+  if (flowerCount > 100) {
+    return 2;
+  }
+  if (flowerCount > 25) {
+    return 1;
+  }
+  return 0;
 }
 
 export function petMoodToState(value?: string, fallback = 0) {
@@ -58,15 +74,15 @@ export function petMoodToState(value?: string, fallback = 0) {
 
 export function getPetImage(
   petType: number,
-  displayLevel: number,
+  assetLevel: number,
   petState: number = 0,
 ) {
   const safePetType = clamp(petType, 0, 2);
-  const assetLevel = clamp(displayLevel - 1, 0, 2);
+  const safeAssetLevel = clamp(assetLevel, 0, 2);
   const safePetState = clamp(petState, 0, 5);
   const folder = PET_FOLDERS[safePetType] || PET_FOLDERS[0];
-  const requestedName = `${safePetType}${assetLevel}${safePetState}.png`;
-  const fallbackMoodName = `${safePetType}${assetLevel}0.png`;
+  const requestedName = `${safePetType}${safeAssetLevel}${safePetState}.png`;
+  const fallbackMoodName = `${safePetType}${safeAssetLevel}0.png`;
   const fallbackLevelName = `${safePetType}00.png`;
 
   return (
@@ -79,12 +95,12 @@ export function getPetImage(
 
 export function getProfilePetImage(
   profile?: UserProfilePet | null,
+  assetLevel = 0,
   petState?: number,
 ) {
   const petType = petTypeToIndex(profile?.current_pet?.pet_type);
-  const level = profilePetLevel(profile);
   const state = petState ?? petMoodToState(profile?.pet_mood);
-  return getPetImage(petType, level, state);
+  return getPetImage(petType, assetLevel, state);
 }
 
 export function getProfilePetName(profile?: UserProfilePet | null) {

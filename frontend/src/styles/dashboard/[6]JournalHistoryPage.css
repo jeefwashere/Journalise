@@ -76,9 +76,8 @@ body {
 }
 
 .paper {
-  width: calc(100% - 260px);
-  max-width: 1380px;
-  margin: 12px 0 0 26px;
+  width: min(100%, 1040px);
+  margin: 12px auto 0;
   background:
     repeating-linear-gradient(
       to bottom,
@@ -243,44 +242,6 @@ body {
   background: #ffe89b;
 }
 
-/* PET */
-
-.pet {
-  position: fixed;
-  right: 18px;
-  bottom: 6px;
-  z-index: 20;
-}
-
-.pet img {
-  width: 255px;
-  display: block;
-}
-
-.speech {
-  position: absolute;
-  right: 170px;
-  top: -50px;
-
-  width: 190px;
-  min-height: 88px;
-
-  background: #fffdf8;
-  border: 3px solid #222;
-  border-radius: 50%;
-
-  padding: 18px 16px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  text-align: center;
-  font-size: 1.35rem;
-  line-height: 1.15;
-}
-
-
 /* MOBILE */
 
 @media (max-width: 1100px) {
@@ -293,13 +254,6 @@ body {
     display: none;
   }
 
-  .pet {
-    position: relative;
-    right: auto;
-    bottom: auto;
-    margin: 30px 20px 0 auto;
-    width: fit-content;
-  }
 }
 
 @media (max-width: 900px) {
