@@ -1,0 +1,82 @@
+.tracking-toggle-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.tracking-label {
+  font-family: "Patrick Hand", cursive;
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  text-align: center;
+  letter-spacing: 0.5px;
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.5);
+  user-select: none;
+  min-height: 24px;
+}
+
+.toggle-switch {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.toggle-checkbox {
+  display: none;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 34px;
+  background-color: #ccc;
+  border-radius: 34px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  position: relative;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.toggle-checkbox:checked + .toggle-label {
+  background-color: #4caf50;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 28px;
+  height: 28px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-checkbox:checked + .toggle-label .toggle-slider {
+  transform: translateX(26px);
+}
+
+@media (max-width: 768px) {
+  .tracking-label {
+    font-size: 14px;
+  }
+
+  .toggle-label {
+    width: 50px;
+    height: 28px;
+  }
+
+  .toggle-slider {
+    width: 24px;
+    height: 24px;
+  }
+
+  .toggle-checkbox:checked + .toggle-label .toggle-slider {
+    transform: translateX(22px);
+  }
+}

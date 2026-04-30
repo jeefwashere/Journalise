@@ -1,0 +1,183 @@
+@import url("https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Gaegu:wght@400;700&display=swap");
+
+.account-page {
+  min-height: 100vh;
+  font-family: "Gaegu", "Patrick Hand", cursive;
+  color: #222;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.65), transparent 25%),
+    linear-gradient(180deg, #bfe7e9 0%, #fff8eb 50%, #f5efd7 100%);
+}
+
+.account-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  height: 72px;
+  padding: 0 32px;
+  background: rgba(184, 232, 232, 0.9);
+  border-bottom: 3px solid #222;
+}
+
+.account-logo {
+  color: #111;
+  font-size: clamp(2.1rem, 3.8vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 2px;
+  text-decoration: none;
+  transform: rotate(-1deg);
+}
+
+.account-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.account-nav-links a,
+.account-nav-links button {
+  min-height: 38px;
+  padding: 5px 12px;
+  color: #1f2d1d;
+  font-family: "Patrick Hand", cursive;
+  font-size: 1.25rem;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  background: rgba(255, 254, 230, 0.92);
+  border: 2px solid rgba(45, 95, 138, 0.72);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 rgba(45, 95, 138, 0.72);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.account-nav-links a:hover,
+.account-nav-links button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(45, 95, 138, 0.72);
+}
+
+.account-content {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.8fr);
+  gap: 28px;
+  width: min(1120px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 54px 0;
+}
+
+.account-panel {
+  min-width: 0;
+  padding: 30px;
+  background: rgba(255, 250, 239, 0.86);
+  border: 4px solid #222;
+  border-radius: 8px;
+  box-shadow: 7px 8px 0 rgba(0, 0, 0, 0.16);
+}
+
+.account-kicker {
+  margin: 0 0 4px;
+  color: #4f756d;
+  font-family: "Patrick Hand", cursive;
+  font-size: 1.25rem;
+}
+
+.account-panel h1,
+.account-panel h2 {
+  margin: 0;
+  color: #111;
+  font-size: clamp(2.5rem, 5vw, 4.6rem);
+  line-height: 0.95;
+}
+
+.account-details {
+  display: grid;
+  gap: 16px;
+  margin: 34px 0 0;
+}
+
+.account-details div {
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 2px dashed rgba(34, 34, 34, 0.35);
+  border-radius: 8px;
+}
+
+.account-details dt {
+  color: #4f756d;
+  font-family: "Patrick Hand", cursive;
+  font-size: 1.05rem;
+}
+
+.account-details dd {
+  margin: 2px 0 0;
+  font-size: 1.6rem;
+  overflow-wrap: anywhere;
+}
+
+.account-pet-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  gap: 22px;
+  text-align: center;
+}
+
+.account-pet-copy p {
+  margin: 8px 0 0;
+  font-size: 1.4rem;
+}
+
+.account-pet-copy strong {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 5px 16px;
+  color: #1f2d1d;
+  font-family: "Patrick Hand", cursive;
+  font-size: 1.35rem;
+  background: #fffee6;
+  border: 2px solid rgba(45, 95, 138, 0.72);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 rgba(45, 95, 138, 0.72);
+}
+
+.account-pet {
+  width: min(310px, 80%);
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 8px rgba(0, 0, 0, 0.16));
+}
+
+@media (max-width: 780px) {
+  .account-nav {
+    height: auto;
+    min-height: 72px;
+    align-items: flex-start;
+    padding: 12px 16px;
+  }
+
+  .account-nav-links {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .account-nav-links a,
+  .account-nav-links button {
+    min-height: 32px;
+    padding: 4px 9px;
+    font-size: 1rem;
+  }
+
+  .account-content {
+    grid-template-columns: 1fr;
+    width: min(100% - 28px, 620px);
+    padding: 28px 0;
+  }
+}

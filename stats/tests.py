@@ -122,6 +122,28 @@ class ActivityStatsViewTests(APITestCase):
         self.assertEqual(work_bucket["activity_count"], 2)
         self.assertEqual(work_bucket["titles"], ["More work", "Focused work"])
 
+    def test_stats_titles_use_browser_tabs_and_app_names_for_tracked_windows(self):
+        self.create_activity(
+            title="chrome.exe - Page not found at /journal - Google Chrome",
+            category=Activity.Category.STUDY,
+            started_at=datetime(2026, 4, 29, 20, 0, tzinfo=dt_timezone.utc),
+            ended_at=datetime(2026, 4, 29, 20, 5, tzinfo=dt_timezone.utc),
+        )
+        self.create_activity(
+            title="Code.exe - activity_ingest.py - Journalise - Visual Studio Code",
+            category=Activity.Category.STUDY,
+            started_at=datetime(2026, 4, 29, 20, 5, tzinfo=dt_timezone.utc),
+            ended_at=datetime(2026, 4, 29, 20, 10, tzinfo=dt_timezone.utc),
+        )
+
+        response = self.client.get(self.stats_url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            response.data[0]["titles"],
+            ["Visual Studio Code", "Page not found at /journal"],
+        )
+
     def test_date_filter_includes_overlapping_activity_segment(self):
         self.create_activity(
             title="Midnight handoff",

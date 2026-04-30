@@ -1,7 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../../api/api";
+import { loginWithGoogle, preloadGoogleAuth } from "../../api/googleAuth";
 import "../../styles/public/signup.css";
-import placeholder from "../../assets/placeholder.jpg";
 
 import pet1Default from "../../assets/Dogs/000.png";
 import pet1Selected from "../../assets/Dogs/002.png";
@@ -9,11 +10,8 @@ import pet1Selected from "../../assets/Dogs/002.png";
 import pet2Default from "../../assets/Cats/100.png";
 import pet2Selected from "../../assets/Cats/102.png";
 
-import pet3Default from "../../assets/placeholder.jpg";
-import pet3Selected from "../../assets/placeholder.jpg";
-
-import pet4Default from "../../assets/placeholder.jpg";
-import pet4Selected from "../../assets/placeholder.jpg";
+import pet3Default from "../../assets/Bunny/200.png";
+import pet3Selected from "../../assets/Bunny/202.png";
 
 type CloudConfig = {
   top: number;
@@ -25,16 +23,23 @@ type CloudConfig = {
 type Pet = {
   id: string;
   label: string;
+  petType: string;
+  petTypeIndex: number;
   defaultImg: string;
   selectedImg: string;
 };
 
+type SignupUser = {
+  username?: string;
+  email?: string;
+};
+
 const PETS: Pet[] = [
-  { id: "pet1", label: "Pet 1", defaultImg: pet1Default, selectedImg: pet1Selected },
-  { id: "pet2", label: "Pet 2", defaultImg: pet2Default, selectedImg: pet2Selected },
-  { id: "pet3", label: "Pet 3", defaultImg: pet3Default, selectedImg: pet3Selected },
-  { id: "pet4", label: "Pet 4", defaultImg: pet4Default, selectedImg: pet4Selected },
+  { id: "pet1", label: "Dog", petType: "dog", petTypeIndex: 0, defaultImg: pet1Default, selectedImg: pet1Selected },
+  { id: "pet2", label: "Cat", petType: "cat", petTypeIndex: 1, defaultImg: pet2Default, selectedImg: pet2Selected },
+  { id: "pet3", label: "Bunny", petType: "frog", petTypeIndex: 2, defaultImg: pet3Default, selectedImg: pet3Selected },
 ];
+const HOME_STATE_KEY = "journaliseHomeState";
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -47,16 +52,25 @@ const Signup: React.FC = () => {
     username: "",
     email: "",
     password: "",
+    form: "",
   });
-
   const [selectedPet, setSelectedPet] = useState<string | null>(null);
   const [petName, setPetName] = useState("");
   const [petNameError, setPetNameError] = useState("");
+  const [signupError, setSignupError] = useState("");
+  const [petSetupError, setPetSetupError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleSignupUser, setGoogleSignupUser] = useState<SignupUser | null>(null);
 
   const secondPageRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    preloadGoogleAuth().catch(() => undefined);
+  }, []);
+
   const validate = () => {
-    const newErrors = { username: "", email: "", password: "" };
+    const newErrors = { username: "", email: "", password: "", form: "" };
     let valid = true;
     if (!username) {
       newErrors.username = "Username is required";
@@ -71,6 +85,7 @@ const Signup: React.FC = () => {
       valid = false;
     }
     setErrors(newErrors);
+    setSignupError("");
     return valid;
   };
 
@@ -99,6 +114,7 @@ const Signup: React.FC = () => {
 
   const handleSignup = () => {
     if (validate()) {
+      setGoogleSignupUser(null);
       setCanScroll(true);
 
       const targetY = secondPageRef.current?.offsetTop || 0;
@@ -107,13 +123,140 @@ const Signup: React.FC = () => {
     }
   };
 
-  const handleLetsGo = () => {
+  const handleLetsGo = async () => {
     if (!petName.trim()) {
       setPetNameError("Please give your pet a name!");
       return;
     }
+
     setPetNameError("");
-    console.log("All done!", { username, email, selectedPet, petName });
+    setPetSetupError("");
+    setSignupError("");
+    setLoading(true);
+
+    try {
+      const chosenPet = PETS.find((pet) => pet.id === selectedPet);
+
+      if (!chosenPet) {
+        setPetNameError("Please pick a pet!");
+        return;
+      }
+
+      let activeUser = googleSignupUser;
+
+      if (!activeUser) {
+        const response = await api.post("auth/register/", {
+          username,
+          email,
+          password,
+        });
+
+        activeUser = response.data.user;
+        localStorage.setItem("accessToken", response.data.access_token);
+        localStorage.setItem("currentUser", JSON.stringify(response.data.user));
+      }
+
+      const petsResponse = await api.get("pets/");
+      const backendPet = petsResponse.data.find(
+        (pet: { id: number; pet_type: string; level: number; mood?: string }) =>
+          pet.pet_type === chosenPet.petType &&
+          pet.level === 1 &&
+          (pet.mood || "neutral") === "neutral"
+      );
+
+      if (!backendPet) {
+        throw new Error("Could not find the selected pet. Please try again.");
+      }
+
+      const userResponse = await api.patch("auth/me/", {
+        profile: {
+          pet_name: petName.trim(),
+          current_pet_id: backendPet.id,
+        },
+      });
+      const updatedUser = userResponse.data;
+
+      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+      localStorage.setItem(
+        HOME_STATE_KEY,
+        JSON.stringify({
+          username: updatedUser.username || activeUser?.username || username,
+          email: updatedUser.email || activeUser?.email || email,
+          petName: petName.trim(),
+          petType: chosenPet.petTypeIndex,
+          petLevel: Number(backendPet.level || 1),
+        }),
+      );
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      const data = error.response?.data;
+      const accountErrors = {
+        username: data?.username?.[0] || "",
+        email: data?.email?.[0] || "",
+        password: data?.password?.[0] || "",
+        form: data?.detail || "",
+      };
+      const hasAccountError =
+        accountErrors.username ||
+        accountErrors.email ||
+        accountErrors.password ||
+        accountErrors.form;
+
+      if (hasAccountError && !googleSignupUser) {
+        setErrors(accountErrors);
+        setSignupError(
+          accountErrors.form ||
+            "Please fix the highlighted signup fields and try again."
+        );
+        smoothScrollTo(0, 800);
+      } else {
+        setPetSetupError(
+          data?.detail ||
+            error.message ||
+            "Could not save your pet. Please try again."
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    setGoogleLoading(true);
+    setSignupError("");
+    setPetSetupError("");
+    setErrors({ username: "", email: "", password: "", form: "" });
+
+    try {
+      const response = await loginWithGoogle();
+      const user = response.user || null;
+
+      setGoogleSignupUser(user);
+      setCanScroll(true);
+
+      if (user?.username) {
+        setUsername(user.username);
+      }
+
+      if (user?.email) {
+        setEmail(user.email);
+      }
+
+      requestAnimationFrame(() => {
+        const targetY = secondPageRef.current?.offsetTop || 0;
+        smoothScrollTo(targetY, 2000);
+      });
+    } catch (error: any) {
+      setSignupError(
+        error.response?.data?.detail ||
+          error.response?.data?.code?.[0] ||
+          error.message ||
+          "Could not sign up with Google. Please try again.",
+      );
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   const clouds: CloudConfig[] = [
@@ -202,7 +345,11 @@ const Signup: React.FC = () => {
                 <span>or</span>
               </div>
 
-              <button className="btn btn-google">
+              <button
+                className="btn btn-google"
+                onClick={handleGoogleSignup}
+                disabled={loading || googleLoading}
+              >
                 <svg
                   className="google-icon"
                   viewBox="0 0 18 18"
@@ -225,8 +372,9 @@ const Signup: React.FC = () => {
                     fill="#EA4335"
                   />
                 </svg>
-                Sign up with Google
+                {googleLoading ? "Opening Google..." : "Sign up with Google"}
               </button>
+              <span className="error">{signupError}</span>
 
               <p className="login-link">
                 Already have an account? <a href="/login">Log in</a>
@@ -264,18 +412,22 @@ const Signup: React.FC = () => {
                 className={`pet-btn ${selectedPet === pet.id ? "pet-btn--selected" : ""}`}
                 onClick={() => {
                   if (selectedPet === pet.id) {
-                    setSelectedPet(null);       // deselect
+                    setSelectedPet(null); // deselect
                     setPetName("");
                     setPetNameError("");
+                    setPetSetupError("");
                   } else {
-                    setSelectedPet(pet.id);     // select
+                    setSelectedPet(pet.id); // select
                     setPetName("");
                     setPetNameError("");
+                    setPetSetupError("");
                   }
                 }}
               >
                 <img
-                  src={selectedPet === pet.id ? pet.selectedImg : pet.defaultImg}
+                  src={
+                    selectedPet === pet.id ? pet.selectedImg : pet.defaultImg
+                  }
                   alt={pet.label}
                   className="pet-img"
                 />
@@ -297,13 +449,14 @@ const Signup: React.FC = () => {
               />
 
               {petNameError && <span className="error">{petNameError}</span>}
+              {petSetupError && <span className="error">{petSetupError}</span>}
 
               <button
                 className="btn btn-letsgo"
-                disabled={!petName.trim()}
+                disabled={!petName.trim() || loading}
                 onClick={handleLetsGo}
               >
-                Next →
+                {loading ? "Creating..." : "Next →"}
               </button>
             </div>
           )}

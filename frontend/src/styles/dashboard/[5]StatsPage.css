@@ -36,22 +36,37 @@
   transform: rotate(-1deg);
 }
 
-.stats-nav-icons {
+.stats-nav-links {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 10px;
 }
 
-.icon-btn {
-  border: 0;
-  background: transparent;
-  color: #111;
-  text-decoration: none;
-  font-family: inherit;
-  font-size: 2.45rem;
+.stats-nav-links a,
+.stats-nav-links button {
+  min-height: 38px;
+  padding: 5px 12px;
+  color: #1f2d1d;
+  font-family: "Patrick Hand", cursive;
+  font-size: 1.25rem;
   line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
+  background: rgba(255, 254, 230, 0.92);
+  border: 2px solid rgba(45, 95, 138, 0.72);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 rgba(45, 95, 138, 0.72);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.stats-nav-links a:hover,
+.stats-nav-links button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(45, 95, 138, 0.72);
 }
 
 /* DROPDOWN */
@@ -69,16 +84,24 @@
   box-shadow: 5px 6px 0 rgba(0, 0, 0, 0.2);
 }
 
-.menu-dropdown a {
+.menu-dropdown a,
+.menu-dropdown button {
   display: block;
+  width: 100%;
   padding: 5px 8px;
   color: #222;
+  font-family: inherit;
   text-decoration: none;
+  text-align: left;
   font-size: 1.28rem;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
   border-radius: 12px;
 }
 
-.menu-dropdown a:hover {
+.menu-dropdown a:hover,
+.menu-dropdown button:hover {
   background: #b7eadf;
 }
 
@@ -97,6 +120,10 @@
   min-width: 0;
   height: 100%;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
   padding: 22px 26px;
   background: rgba(255, 250, 239, 0.82);
   border: 4px solid #222;
@@ -182,6 +209,8 @@
   position: relative;
   height: 245px;
   margin-top: 4px;
+  flex: 1;
+  min-height: 245px;
 }
 
 .y-labels {
@@ -236,6 +265,7 @@
 
 .top-hours-card {
   margin-top: 10px;
+  flex-shrink: 0;
   padding: 15px 18px;
   background: rgba(255, 253, 246, 0.9);
   border: 3px solid #222;
@@ -284,6 +314,8 @@
   align-items: center;
   gap: 18px;
   margin-top: 6px;
+  flex: 1;
+  min-height: 250px;
 }
 
 .pie-chart {
@@ -294,13 +326,15 @@
   overflow: hidden;
   border: 4px solid #222;
   border-radius: 50%;
-  background: conic-gradient(
-    #9ee3d8 0 40%,
-    #ffe29a 40% 65%,
-    #d8c5f2 65% 85%,
-    #ffaaa0 85% 95%,
-    #aeddf2 95% 100%
-  );
+  background: #fff8eb;
+}
+
+.pie-chart.empty {
+  background:
+    repeating-conic-gradient(
+      rgba(34, 34, 34, 0.08) 0 8deg,
+      rgba(255, 248, 235, 0.95) 8deg 18deg
+    );
 }
 
 .pie-center {
@@ -348,9 +382,13 @@
 .legend span {
   width: 20px;
   height: 20px;
-  background: #9ee3d8;
   border: 3px solid #222;
   border-radius: 7px;
+}
+
+.empty-breakdown {
+  margin: 0;
+  font-size: 1.15rem;
 }
 
 /* GARDEN */
@@ -358,6 +396,7 @@
 .flowers-card {
   position: relative;
   margin-top: 18px;
+  flex-shrink: 0;
   max-height: clamp(170px, 28vh, 230px);
   min-height: 165px;
   padding: 15px 18px 14px;
@@ -560,8 +599,17 @@
     font-size: 2.2rem;
   }
 
-  .icon-btn {
-    font-size: 2rem;
+  .stats-nav-links {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .stats-nav-links a,
+  .stats-nav-links button {
+    min-height: 32px;
+    padding: 4px 9px;
+    font-size: 1rem;
   }
 
   .stats-content {

@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.authentication import BearerTokenAuthentication
+from journal.activity_titles import activity_title_to_app_name
 from journal.models import Activity
 from .serializers import StatsSerializer
 
@@ -100,7 +101,9 @@ class ActivityStatsView(APIView):
                 bucket["activity_ids"].add(activity.pk)
 
                 if activity.title:
-                    bucket["titles"].add(activity.title)
+                    app_name = activity_title_to_app_name(activity.title)
+                    if app_name:
+                        bucket["titles"].add(app_name)
 
                 if activity.description:
                     bucket["notes"].add(activity.description)
@@ -119,8 +122,8 @@ class ActivityStatsView(APIView):
                 "start_time": bucket["start_time"],
                 "end_time": bucket["end_time"],
                 "activity_count": len(bucket["activity_ids"]),
-                "titles": list(bucket["titles"]),
-                "notes": list(bucket["notes"]),
+                "titles": sorted(bucket["titles"], reverse=True),
+                "notes": sorted(bucket["notes"], reverse=True),
             }
             for bucket in sorted(
                 buckets.values(),

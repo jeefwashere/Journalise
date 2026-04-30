@@ -9,6 +9,7 @@ from pets.choices import PetMood
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     display_name = models.CharField(max_length=100, blank=True)
+    pet_name = models.CharField(max_length=100, blank=True)
     pet_level = models.PositiveSmallIntegerField(
         default=1,
         validators=[

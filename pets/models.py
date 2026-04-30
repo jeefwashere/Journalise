@@ -9,7 +9,7 @@ class Pet(models.Model):
     class PetType(models.TextChoices):
         CAT = "cat", "Cat"
         DOG = "dog", "Dog"
-        FROG = "frog", "Frog"
+        FROG = "frog", "Bunny"
 
     pet_type = models.CharField(max_length=20, choices=PetType.choices)
     level = models.PositiveSmallIntegerField()

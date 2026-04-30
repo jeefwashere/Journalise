@@ -1,0 +1,292 @@
+@import url("https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Gaegu:wght@400;700&display=swap");
+
+.home-page {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 620px;
+  overflow: hidden;
+  font-family: "Patrick Hand", cursive;
+  background: linear-gradient(
+    to bottom,
+    #1499eb 0%,
+    #a8dcf8 34%,
+    #d6effc 49%,
+    #83cf71 50%,
+    #5aab47 100%
+  );
+}
+
+.home-nav {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  height: 72px;
+  padding: 0 32px;
+  background: rgba(214, 239, 252, 0.82);
+  border-bottom: 3px solid rgba(45, 95, 138, 0.76);
+  box-shadow: 0 8px 24px rgba(45, 95, 138, 0.12);
+  backdrop-filter: blur(8px);
+}
+
+.home-logo {
+  color: #111;
+  font-family: "Gaegu", "Patrick Hand", cursive;
+  font-size: clamp(2.1rem, 3.8vw, 3.2rem);
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  letter-spacing: 2px;
+  transform: rotate(-1deg);
+}
+
+.home-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.home-nav-links a,
+.home-nav-links button {
+  min-height: 38px;
+  padding: 5px 12px;
+  color: #1f2d1d;
+  font-family: "Patrick Hand", cursive;
+  font-size: 1.25rem;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  background: rgba(255, 254, 230, 0.92);
+  border: 2px solid rgba(45, 95, 138, 0.72);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 rgba(45, 95, 138, 0.72);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.home-nav-links a:hover,
+.home-nav-links button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(45, 95, 138, 0.72);
+}
+
+.home-sky {
+  position: absolute;
+  inset: 0 0 42vh;
+  overflow: hidden;
+  background: linear-gradient(175deg, #1499eb 0%, #a8dcf8 56%, #d6effc 100%);
+}
+
+.home-cloud {
+  position: absolute;
+  left: -220px;
+  width: 180px;
+  height: 64px;
+  animation-name: homeMoveClouds;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  filter: drop-shadow(2px 3px 0 rgba(120, 180, 230, 0.35));
+}
+
+.home-cloud-body {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 42px;
+  background: #fff;
+  border-radius: 40px;
+}
+
+.home-cloud-bump {
+  position: absolute;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.home-cloud-bump--sm {
+  bottom: 24px;
+  left: 14px;
+  width: 70px;
+  height: 52px;
+}
+
+.home-cloud-bump--lg {
+  bottom: 28px;
+  left: 52px;
+  width: 76px;
+  height: 67px;
+}
+
+.home-cloud-bump--md {
+  bottom: 22px;
+  left: 112px;
+  width: 56px;
+  height: 50px;
+}
+
+.home-hills {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.home-hill {
+  position: absolute;
+  left: 50%;
+  border-radius: 50%;
+  transform: translateX(-50%);
+}
+
+.home-hill--back {
+  bottom: -42vh;
+  width: 162vw;
+  height: 110vh;
+  background: #6dc558;
+}
+
+.home-hill--front {
+  bottom: -48vh;
+  width: 164vw;
+  height: 96vh;
+  background: #5aab47;
+  box-shadow:
+    inset 0 20px 60px rgba(80, 160, 60, 0.5),
+    inset 0 -10px 30px rgba(40, 100, 30, 0.3);
+}
+
+.home-flowers {
+  position: absolute;
+  inset: 42vh 0 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.home-flower {
+  position: absolute;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 3px 2px rgba(38, 99, 31, 0.2));
+  transform-origin: 50% 100%;
+}
+
+.home-pet-button {
+  position: absolute;
+  bottom: clamp(18px, 4vh, 44px);
+  left: clamp(18px, 4vw, 54px);
+  z-index: 10;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: clamp(120px, 16vw, 190px);
+  aspect-ratio: 1;
+  padding: 0;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  filter: drop-shadow(0 8px 8px rgba(39, 98, 32, 0.24));
+  transition: transform 0.16s ease;
+}
+
+.home-pet-button:hover {
+  transform: translateY(-6px) scale(1.03);
+}
+
+.home-pet-button:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.home-pet {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: auto;
+  pointer-events: none;
+}
+
+.home-tracking {
+  position: absolute;
+  right: clamp(18px, 4vw, 54px);
+  bottom: clamp(24px, 5vh, 54px);
+  z-index: 12;
+  padding: 12px 16px 14px;
+  background: rgba(255, 254, 230, 0.9);
+  border: 2px solid rgba(45, 95, 138, 0.7);
+  border-radius: 8px;
+  box-shadow:
+    3px 3px 0 rgba(45, 95, 138, 0.8),
+    0 10px 24px rgba(40, 100, 30, 0.16);
+}
+
+@keyframes homeMoveClouds {
+  from {
+    left: -220px;
+  }
+
+  to {
+    left: 110%;
+  }
+}
+
+@media (max-width: 720px) {
+  .home-page {
+    min-height: 560px;
+  }
+
+  .home-sky {
+    inset: 0 0 46vh;
+  }
+
+  .home-flowers {
+    inset: 40vh 0 0;
+  }
+
+  .home-hill--back {
+    bottom: -40vh;
+    width: 190vw;
+    height: 96vh;
+  }
+
+  .home-hill--front {
+    bottom: -42vh;
+    width: 210vw;
+    height: 82vh;
+  }
+
+  .home-pet-button {
+    width: 116px;
+  }
+
+  .home-tracking {
+    padding: 10px 12px 12px;
+  }
+
+  .home-nav {
+    height: auto;
+    min-height: 72px;
+    align-items: flex-start;
+    padding: 12px 16px;
+  }
+
+  .home-nav-links {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .home-nav-links a,
+  .home-nav-links button {
+    min-height: 32px;
+    padding: 4px 9px;
+    font-size: 1rem;
+  }
+}

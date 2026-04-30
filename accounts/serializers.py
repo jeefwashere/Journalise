@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from pets.models import Pet
@@ -26,6 +27,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = (
             "display_name",
+            "pet_name",
             "pet_level",
             "current_pet",
             "current_pet_id",
@@ -137,7 +139,15 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class GoogleLoginSerializer(serializers.Serializer):
-    id_token = serializers.CharField()
+    id_token = serializers.CharField(required=False)
+    code = serializers.CharField(required=False)
+
+    def validate(self, attrs):
+        if not attrs.get("id_token") and not attrs.get("code"):
+            raise serializers.ValidationError(
+                {"id_token": "Provide either a Google ID token or authorization code."}
+            )
+        return attrs
 
 
 class LoginSerializer(serializers.Serializer):
@@ -162,12 +172,17 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def validate_password(self, value):
-        self.validate_password(value)
+        validate_password(value)
         return value
 
     def create(self, validated_data):
-        return User.objects.create(
+        user = User.objects.create_user(
             username=validated_data["username"],
             email=validated_data["email"],
             password=validated_data["password"],
         )
+        UserProfile.objects.get_or_create(
+            user=user,
+            defaults={"display_name": validated_data["username"]},
+        )
+        return user

@@ -15,11 +15,11 @@ User = get_user_model()
 
 class UserSerializerTests(TestCase):
     def test_serializes_oauth_safe_user_fields(self):
-        pet = Pet.objects.create(
+        pet, _ = Pet.objects.get_or_create(
             pet_type=Pet.PetType.CAT,
             level=1,
-            name="Nova",
-            svg_path="pets/cat-1.svg",
+            mood=PetMood.NEUTRAL,
+            defaults={"name": "Cat", "svg_path": "pets/cat-1-neutral.svg"},
         )
         user = User.objects.create_user(
             username="test",
@@ -43,7 +43,7 @@ class UserSerializerTests(TestCase):
         self.assertEqual(data["picture"], "https://example.com/avatar.png")
         self.assertEqual(data["profile"]["pet_level"], 1)
         self.assertEqual(data["profile"]["current_pet"]["id"], pet.pk)
-        self.assertEqual(data["profile"]["current_pet"]["name"], "Nova")
+        self.assertEqual(data["profile"]["current_pet"]["name"], "Cat")
         self.assertEqual(data["profile"]["current_pet"]["mood"], PetMood.NEUTRAL)
         self.assertEqual(data["profile"]["pet_mood"], PetMood.NEUTRAL)
         self.assertEqual(data["profile"]["pet_mood_display"], "Neutral")
@@ -53,11 +53,11 @@ class UserSerializerTests(TestCase):
         self.assertNotIn("is_superuser", data)
 
     def test_updates_nested_profile(self):
-        pet = Pet.objects.create(
+        pet, _ = Pet.objects.get_or_create(
             pet_type=Pet.PetType.DOG,
             level=1,
-            name="Orbit",
-            svg_path="pets/dog-1.svg",
+            mood=PetMood.NEUTRAL,
+            defaults={"name": "Dog", "svg_path": "pets/dog-1-neutral.svg"},
         )
         user = User.objects.create_user(username="sam", password="secret-pass")
 
@@ -84,11 +84,11 @@ class UserSerializerTests(TestCase):
         self.assertEqual(user.profile.avatar_url, "https://example.com/sam.png")
 
     def test_rejects_current_pet_above_users_pet_level(self):
-        locked_pet = Pet.objects.create(
+        locked_pet, _ = Pet.objects.get_or_create(
             pet_type=Pet.PetType.FROG,
             level=2,
-            name="Ripple",
-            svg_path="pets/frog-2.svg",
+            mood=PetMood.NEUTRAL,
+            defaults={"name": "Bunny", "svg_path": "pets/frog-2-neutral.svg"},
         )
         user = User.objects.create_user(username="lee", password="secret-pass")
         UserProfile.objects.create(user=user, pet_level=1)
@@ -147,6 +147,58 @@ class CurrentUserViewTests(TestCase):
 
     def test_current_user_view_requires_authentication(self):
         response = self.client.get(reverse("current-user"))
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
+class AuthViewTests(TestCase):
+    def test_register_creates_user_with_hashed_password_and_returns_token(self):
+        response = self.client.post(
+            reverse("register"),
+            data={
+                "username": "new-user",
+                "email": "new@example.com",
+                "password": "secure-pass-123",
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        data = response.json()
+        user = User.objects.get(username="new-user")
+
+        self.assertTrue(user.check_password("secure-pass-123"))
+        self.assertEqual(user.email, "new@example.com")
+        self.assertEqual(user.profile.display_name, "new-user")
+        self.assertEqual(data["token_type"], "Bearer")
+        self.assertIn("access_token", data)
+        self.assertIn("access_token", response.cookies)
+
+    def test_login_returns_token_for_valid_credentials(self):
+        User.objects.create_user(
+            username="login-user",
+            email="login@example.com",
+            password="secure-pass-123",
+        )
+
+        response = self.client.post(
+            reverse("login"),
+            data={"username": "login-user", "password": "secure-pass-123"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["token_type"], "Bearer")
+        self.assertIn("access_token", data)
+        self.assertEqual(data["user"]["username"], "login-user")
+
+    def test_login_rejects_invalid_credentials(self):
+        response = self.client.post(
+            reverse("login"),
+            data={"username": "missing-user", "password": "wrong-pass"},
+            content_type="application/json",
+        )
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
