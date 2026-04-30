@@ -26,35 +26,16 @@ type CloudConfig = {
 type Pet = {
   id: string;
   label: string;
+  petType: string;
   defaultImg: string;
   selectedImg: string;
 };
 
 const PETS: Pet[] = [
-  {
-    id: "dog",
-    label: "Dog",
-    defaultImg: pet1Default,
-    selectedImg: pet1Selected,
-  },
-  {
-    id: "cat",
-    label: "Cat",
-    defaultImg: pet2Default,
-    selectedImg: pet2Selected,
-  },
-  {
-    id: "bunny",
-    label: "Bunny",
-    defaultImg: pet3Default,
-    selectedImg: pet3Selected,
-  },
-  {
-    id: "frog",
-    label: "Frog",
-    defaultImg: pet4Default,
-    selectedImg: pet4Selected,
-  },
+  { id: "pet1", label: "Pet 1", petType: "dog", defaultImg: pet1Default, selectedImg: pet1Selected },
+  { id: "pet2", label: "Pet 2", petType: "cat", defaultImg: pet2Default, selectedImg: pet2Selected },
+  { id: "pet3", label: "Pet 3", petType: "frog", defaultImg: pet3Default, selectedImg: pet3Selected },
+  { id: "pet4", label: "Pet 4", petType: "cat", defaultImg: pet4Default, selectedImg: pet4Selected },
 ];
 
 const PET_TYPE_BY_ID: Record<string, number> = {
@@ -82,6 +63,8 @@ const Signup: React.FC = () => {
   const [selectedPet, setSelectedPet] = useState<string | null>(null);
   const [petName, setPetName] = useState("");
   const [petNameError, setPetNameError] = useState("");
+  const [signupError, setSignupError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const secondPageRef = useRef<HTMLDivElement>(null);
 
@@ -178,42 +161,54 @@ const Signup: React.FC = () => {
       setPetNameError("Please give your pet a name!");
       return;
     }
+
     setPetNameError("");
-    setIsSubmitting(true);
+    setSignupError("");
+    setLoading(true);
 
     try {
-      const response = await api.post("register/", {
-        username: username.trim(),
-        email: email.trim(),
+      const response = await api.post("auth/register/", {
+        username,
+        email,
         password,
       });
 
-      const accessToken = response.data?.access_token;
+      localStorage.setItem("accessToken", response.data.access_token);
+      localStorage.setItem("currentUser", JSON.stringify(response.data.user));
 
-      if (accessToken) {
-        localStorage.setItem("accessToken", accessToken);
+      const chosenPet = PETS.find((pet) => pet.id === selectedPet);
+
+      if (chosenPet) {
+        const petsResponse = await api.get("pets/");
+        const backendPet = petsResponse.data.find(
+          (pet: { id: number; pet_type: string; level: number }) =>
+            pet.pet_type === chosenPet.petType && pet.level === 1
+        );
+
+        if (backendPet) {
+          const userResponse = await api.patch("auth/me/", {
+            profile: {
+              display_name: petName.trim(),
+              current_pet_id: backendPet.id,
+            },
+          });
+
+          localStorage.setItem("currentUser", JSON.stringify(userResponse.data));
+        }
       }
 
-      localStorage.setItem(
-        "journaliseHomeState",
-        JSON.stringify({
-          username: username.trim(),
-          email: email.trim(),
-          petType: selectedPet ? PET_TYPE_BY_ID[selectedPet] : 0,
-          petLevel: 0,
-          petName: petName.trim(),
-          flowerTypes: [4, 5, 6, 7, 8],
-        }),
+      navigate("/dashboard");
+    } catch (error: any) {
+      const data = error.response?.data;
+      setSignupError(
+        data?.username?.[0] ||
+          data?.email?.[0] ||
+          data?.password?.[0] ||
+          data?.detail ||
+          "Could not create your account. Please try again."
       );
-      localStorage.setItem("journaliseIsAuthenticated", "true");
-      navigate("/home");
-    } catch (error) {
-      setErrors((currentErrors) => ({
-        ...currentErrors,
-        form: getSignupErrorMessage(error),
-      }));
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -400,10 +395,11 @@ const Signup: React.FC = () => {
               />
 
               {petNameError && <span className="error">{petNameError}</span>}
+              {signupError && <span className="error">{signupError}</span>}
 
               <button
                 className="btn btn-letsgo"
-                disabled={!petName.trim() || isSubmitting}
+                disabled={!petName.trim() || loading}
                 onClick={handleLetsGo}
               >
                 {isSubmitting ? "Creating..." : "Next →"}

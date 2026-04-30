@@ -14,7 +14,8 @@ const Login: React.FC = () => {
     password: "",
     form: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const validate = () => {
     const newErrors = { username: "", password: "", form: "" };
@@ -35,36 +36,28 @@ const Login: React.FC = () => {
   };
 
   const handleLogin = async () => {
-    if (!validate()) return;
+    if (!validate()) {
+      return;
+    }
 
-    setIsSubmitting(true);
+    setLoading(true);
+    setFormError("");
 
     try {
-      const response = await api.post("login/", {
-        username: username.trim(),
+      const response = await api.post("auth/login/", {
+        username,
         password,
       });
 
-      const accessToken = response.data?.access_token;
-
-      if (accessToken) {
-        localStorage.setItem("accessToken", accessToken);
-      }
-
-      localStorage.setItem("journaliseIsAuthenticated", "true");
-      navigate("/home");
-    } catch (error) {
-      const message =
-        axios.isAxiosError(error) && error.response?.data?.detail
-          ? error.response.data.detail
-          : "Unable to log in. Please check your details and try again.";
-
-      setErrors((currentErrors) => ({
-        ...currentErrors,
-        form: message,
-      }));
+      localStorage.setItem("accessToken", response.data.access_token);
+      localStorage.setItem("currentUser", JSON.stringify(response.data.user));
+      navigate("/dashboard");
+    } catch (error: any) {
+      setFormError(
+        error.response?.data?.detail || "Could not log in. Please try again."
+      );
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
 
@@ -125,9 +118,10 @@ const Login: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
               <span className="error">{errors.password}</span>
+              <span className="error">{formError}</span>
 
-              <button className="btn btn-login" onClick={handleLogin}>
-                {isSubmitting ? "Logging In..." : "Log In"}
+              <button className="btn btn-login" onClick={handleLogin} disabled={loading}>
+                {loading ? "Logging in..." : "Log In"}
               </button>
               <span className="error">{errors.form}</span>
 

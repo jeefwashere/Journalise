@@ -205,6 +205,22 @@ export default function StatsPage() {
           <button type="button" onClick={handleLogout}>
             Log Out
           </button>
+
+          <AnimatePresence>
+            {menuOpen && (
+              <motion.div
+                className="menu-dropdown"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+              >
+                <Link to="/stats">My Stats</Link>
+                <Link to="/account">My Account</Link>
+                <Link to="/journal-history">Journal History</Link>
+                <Link to="/logout">Logout</Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </nav>
 
@@ -418,7 +434,7 @@ export default function StatsPage() {
                 className="close-btn"
                 onClick={() => setFlowerModal(false)}
               >
-                ×
+            
               </button>
               <h2>Reward Garden</h2>
               <p>

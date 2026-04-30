@@ -4,27 +4,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LandingPage from "./pages/public/[0]LandingPage";
 import LoginPage from "./pages/public/[1]LoginPage";
 import SignupPage from "./pages/public/SignUp1";
-import MainPage from "./pages/dashboard/MainPage";
-import AccountPage from "./pages/dashboard/AccountPage";
-
 import StatsPage from "./pages/dashboard/[5]StatsPage";
-
-function isAuthenticated() {
-  return Boolean(
-    localStorage.getItem("accessToken") ||
-      localStorage.getItem("token") ||
-      localStorage.getItem("journaliseIsAuthenticated") === "true",
-  );
-}
-
-function ProtectedRoute({ children }: { children: ReactNode }) {
-  if (!isAuthenticated()) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return children;
-}
-
+import JournalHistoryPage from "./pages/dashboard/JournalHistoryPage";
 function App() {
   return (
     <BrowserRouter>
@@ -68,32 +49,9 @@ function App() {
           }
         />
 
-        {/* Coming soon pages */}
-        <Route
-          path="/journal"
-          element={
-            <ProtectedRoute>
-              <StatsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/pet-room"
-          element={
-            <ProtectedRoute>
-              <StatsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <StatsPage />
-            </ProtectedRoute>
-          }
-        />
-
+        <Route path="/history" element={<JournalHistoryPage />} />
+        <Route path="/journal-history" element={<JournalHistoryPage />} />
+        <Route path="/journal" element={<JournalHistoryPage />} />
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
