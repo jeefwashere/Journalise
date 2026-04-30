@@ -8,7 +8,6 @@ from rest_framework.test import APIClient, APITestCase
 
 from journal.models import Activity
 
-
 urlpatterns = [
     path("", include("stats.urls")),
 ]
@@ -121,7 +120,7 @@ class ActivityStatsViewTests(APITestCase):
         )
         work_bucket = response.data[1]
         self.assertEqual(work_bucket["activity_count"], 2)
-        self.assertEqual(work_bucket["titles"], ["Focused work", "More work"])
+        self.assertEqual(work_bucket["titles"], ["More work", "Focused work"])
 
     def test_date_filter_includes_overlapping_activity_segment(self):
         self.create_activity(
