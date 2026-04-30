@@ -56,7 +56,7 @@ def verify_google_id_token(id_token):
             audience=client_id,
             options={"require": ["exp", "iat", "sub", "aud"]},
         )
-    except jwt.InvalidTokenError as exc:
+    except (jwt.InvalidTokenError, jwt.PyJWKClientError) as exc:
         raise serializers.ValidationError(
             {"id_token": "Invalid Google ID token."}
         ) from exc
@@ -93,8 +93,16 @@ def exchange_google_auth_code(code):
         )
         response.raise_for_status()
     except requests.RequestException as exc:
+        detail = "Could not exchange Google authorization code."
+        response = getattr(exc, "response", None)
+        if settings.DEBUG and response is not None:
+            try:
+                google_error = response.json()
+            except ValueError:
+                google_error = response.text
+            detail = f"{detail} Google response: {google_error}"
         raise serializers.ValidationError(
-            {"code": "Could not exchange Google authorization code."}
+            {"code": detail}
         ) from exc
 
     token_payload = response.json()

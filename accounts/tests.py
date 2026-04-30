@@ -15,11 +15,11 @@ User = get_user_model()
 
 class UserSerializerTests(TestCase):
     def test_serializes_oauth_safe_user_fields(self):
-        pet = Pet.objects.create(
+        pet, _ = Pet.objects.get_or_create(
             pet_type=Pet.PetType.CAT,
             level=1,
-            name="Nova",
-            svg_path="pets/cat-1.svg",
+            mood=PetMood.NEUTRAL,
+            defaults={"name": "Cat", "svg_path": "pets/cat-1-neutral.svg"},
         )
         user = User.objects.create_user(
             username="test",
@@ -43,7 +43,7 @@ class UserSerializerTests(TestCase):
         self.assertEqual(data["picture"], "https://example.com/avatar.png")
         self.assertEqual(data["profile"]["pet_level"], 1)
         self.assertEqual(data["profile"]["current_pet"]["id"], pet.pk)
-        self.assertEqual(data["profile"]["current_pet"]["name"], "Nova")
+        self.assertEqual(data["profile"]["current_pet"]["name"], "Cat")
         self.assertEqual(data["profile"]["current_pet"]["mood"], PetMood.NEUTRAL)
         self.assertEqual(data["profile"]["pet_mood"], PetMood.NEUTRAL)
         self.assertEqual(data["profile"]["pet_mood_display"], "Neutral")
@@ -53,11 +53,11 @@ class UserSerializerTests(TestCase):
         self.assertNotIn("is_superuser", data)
 
     def test_updates_nested_profile(self):
-        pet = Pet.objects.create(
+        pet, _ = Pet.objects.get_or_create(
             pet_type=Pet.PetType.DOG,
             level=1,
-            name="Orbit",
-            svg_path="pets/dog-1.svg",
+            mood=PetMood.NEUTRAL,
+            defaults={"name": "Dog", "svg_path": "pets/dog-1-neutral.svg"},
         )
         user = User.objects.create_user(username="sam", password="secret-pass")
 
@@ -84,11 +84,11 @@ class UserSerializerTests(TestCase):
         self.assertEqual(user.profile.avatar_url, "https://example.com/sam.png")
 
     def test_rejects_current_pet_above_users_pet_level(self):
-        locked_pet = Pet.objects.create(
+        locked_pet, _ = Pet.objects.get_or_create(
             pet_type=Pet.PetType.FROG,
             level=2,
-            name="Ripple",
-            svg_path="pets/frog-2.svg",
+            mood=PetMood.NEUTRAL,
+            defaults={"name": "Bunny", "svg_path": "pets/frog-2-neutral.svg"},
         )
         user = User.objects.create_user(username="lee", password="secret-pass")
         UserProfile.objects.create(user=user, pet_level=1)

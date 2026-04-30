@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from journal.activity_store import load_sessions_for_date, save_sessions_for_date
+from journal.activity_titles import activity_title_to_app_name
 from journal.app_category import resolve_app_category
 from journal.privacy import sanitize_text
 from journal.timezone_utils import LOCAL_TZ, parse_timestamp
@@ -143,9 +144,10 @@ def rebuild_hourly_summary_for_date(base_dir: str | Path, date_str: str) -> list
             category_bucket["total_seconds"] = float(category_bucket["total_seconds"]) + duration_seconds
             category_bucket["activity_count"] = int(category_bucket["activity_count"]) + 1
 
+            app_name = activity_title_to_app_name(session["title"])
             titles = list(category_bucket["titles"])
-            if session["title"] not in titles:
-                titles.append(session["title"])
+            if app_name and app_name not in titles:
+                titles.append(app_name)
             category_bucket["titles"] = titles
 
     results: list[dict[str, object]] = []

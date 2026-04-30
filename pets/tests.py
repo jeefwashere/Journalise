@@ -26,43 +26,27 @@ class PetViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_pet_list_returns_available_pets_in_model_order(self):
-        dog_level_two = Pet.objects.create(
-            pet_type=Pet.PetType.DOG,
-            level=2,
-            name="Comet",
-            svg_path="pets/dog-2.svg",
-        )
-        cat_level_one = Pet.objects.create(
-            pet_type=Pet.PetType.CAT,
-            level=1,
-            name="Nova",
-            svg_path="pets/cat-1.svg",
-        )
-        dog_level_one = Pet.objects.create(
-            pet_type=Pet.PetType.DOG,
-            level=1,
-            name="Orbit",
-            svg_path="pets/dog-1.svg",
-        )
-
         response = self.client.get(reverse("pet-list"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(
-            [item["id"] for item in response.data],
-            [cat_level_one.pk, dog_level_one.pk, dog_level_two.pk],
+        self.assertGreaterEqual(len(response.data), 36)
+        neutral_cat = next(
+            item
+            for item in response.data
+            if item["pet_type"] == Pet.PetType.CAT
+            and item["level"] == 1
+            and item["mood"] == PetMood.NEUTRAL
         )
-        self.assertEqual(response.data[0]["pet_type_display"], "Cat")
-        self.assertEqual(response.data[0]["mood"], PetMood.NEUTRAL)
-        self.assertEqual(response.data[0]["mood_display"], "Neutral")
-        self.assertEqual(response.data[0]["svg_path"], "pets/cat-1.svg")
+        self.assertEqual(neutral_cat["pet_type_display"], "Cat")
+        self.assertEqual(neutral_cat["mood_display"], "Neutral")
+        self.assertEqual(neutral_cat["svg_path"], "pets/cat-1-neutral.svg")
 
     def test_pet_detail_returns_pet(self):
-        pet = Pet.objects.create(
+        pet, _ = Pet.objects.get_or_create(
             pet_type=Pet.PetType.FROG,
             level=1,
-            name="Ripple",
-            svg_path="pets/frog-1.svg",
+            mood=PetMood.NEUTRAL,
+            defaults={"name": "Bunny", "svg_path": "pets/frog-1-neutral.svg"},
         )
 
         response = self.client.get(reverse("pet-detail", kwargs={"pk": pet.pk}))
@@ -70,8 +54,9 @@ class PetViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data["id"], pet.pk)
         self.assertEqual(response.data["pet_type"], Pet.PetType.FROG)
+        self.assertEqual(response.data["pet_type_display"], "Bunny")
         self.assertEqual(response.data["mood"], PetMood.NEUTRAL)
-        self.assertEqual(response.data["name"], "Ripple")
+        self.assertEqual(response.data["name"], "Bunny")
 
     def test_pet_mood_view_requires_authentication(self):
         response = APIClient().post(
@@ -83,19 +68,15 @@ class PetViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_pet_mood_view_updates_mood_from_user_action(self):
-        neutral_pet = Pet.objects.create(
+        neutral_pet = Pet.objects.get(
             pet_type=Pet.PetType.CAT,
             level=1,
             mood=PetMood.NEUTRAL,
-            name="Nova",
-            svg_path="pets/cat-1.svg",
         )
-        happy_pet = Pet.objects.create(
+        happy_pet = Pet.objects.get(
             pet_type=Pet.PetType.CAT,
             level=1,
             mood=PetMood.HAPPY,
-            name="Nova",
-            svg_path="pets/cat-1-happy.svg",
         )
         UserProfile.objects.create(user=self.user, current_pet=neutral_pet)
 

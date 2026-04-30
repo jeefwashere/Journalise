@@ -13,9 +13,6 @@ import pet2Selected from "../../assets/Cats/102.png";
 import pet3Default from "../../assets/Bunny/200.png";
 import pet3Selected from "../../assets/Bunny/202.png";
 
-import pet4Default from "../../assets/placeholder.jpg";
-import pet4Selected from "../../assets/placeholder.jpg";
-
 type CloudConfig = {
   top: number;
   duration: number;
@@ -27,16 +24,17 @@ type Pet = {
   id: string;
   label: string;
   petType: string;
+  petTypeIndex: number;
   defaultImg: string;
   selectedImg: string;
 };
 
 const PETS: Pet[] = [
-  { id: "pet1", label: "Pet 1", petType: "dog", defaultImg: pet1Default, selectedImg: pet1Selected },
-  { id: "pet2", label: "Pet 2", petType: "cat", defaultImg: pet2Default, selectedImg: pet2Selected },
-  { id: "pet3", label: "Pet 3", petType: "frog", defaultImg: pet3Default, selectedImg: pet3Selected },
-  { id: "pet4", label: "Pet 4", petType: "cat", defaultImg: pet4Default, selectedImg: pet4Selected },
+  { id: "pet1", label: "Dog", petType: "dog", petTypeIndex: 0, defaultImg: pet1Default, selectedImg: pet1Selected },
+  { id: "pet2", label: "Cat", petType: "cat", petTypeIndex: 1, defaultImg: pet2Default, selectedImg: pet2Selected },
+  { id: "pet3", label: "Bunny", petType: "frog", petTypeIndex: 2, defaultImg: pet3Default, selectedImg: pet3Selected },
 ];
+const HOME_STATE_KEY = "journaliseHomeState";
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -141,19 +139,31 @@ const Signup: React.FC = () => {
       if (chosenPet) {
         const petsResponse = await api.get("pets/");
         const backendPet = petsResponse.data.find(
-          (pet: { id: number; pet_type: string; level: number }) =>
-            pet.pet_type === chosenPet.petType && pet.level === 1
+          (pet: { id: number; pet_type: string; level: number; mood?: string }) =>
+            pet.pet_type === chosenPet.petType &&
+            pet.level === 1 &&
+            (pet.mood || "neutral") === "neutral"
         );
 
         if (backendPet) {
           const userResponse = await api.patch("auth/me/", {
             profile: {
-              display_name: petName.trim(),
+              pet_name: petName.trim(),
               current_pet_id: backendPet.id,
             },
           });
 
           localStorage.setItem("currentUser", JSON.stringify(userResponse.data));
+          localStorage.setItem(
+            HOME_STATE_KEY,
+            JSON.stringify({
+              username,
+              email,
+              petName: petName.trim(),
+              petType: chosenPet.petTypeIndex,
+              petLevel: Number(backendPet.level || 1),
+            }),
+          );
         }
       }
 

@@ -27,6 +27,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = UserProfile
         fields = (
             "display_name",
+            "pet_name",
             "pet_level",
             "current_pet",
             "current_pet_id",

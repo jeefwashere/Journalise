@@ -52,6 +52,44 @@ class ActivitySessionTests(SimpleTestCase):
         )
 
 
+class ActivityTitleTests(SimpleTestCase):
+    def test_activity_title_to_app_name_uses_browser_tab_title(self):
+        from journal.activity_titles import activity_title_to_app_name
+
+        self.assertEqual(
+            activity_title_to_app_name(
+                "chrome.exe - Page not found at /journal - Google Chrome"
+            ),
+            "Page not found at /journal",
+        )
+        self.assertEqual(
+            activity_title_to_app_name(
+                "chrome.exe - (25) YouTube - Google Chrome"
+            ),
+            "(25) YouTube",
+        )
+
+    def test_activity_title_to_app_name_collapses_non_browser_windows(self):
+        from journal.activity_titles import activity_title_to_app_name
+
+        self.assertEqual(
+            activity_title_to_app_name(
+                "Code.exe - activity_ingest.py - Journalise - Visual Studio Code"
+            ),
+            "Visual Studio Code",
+        )
+        self.assertEqual(
+            activity_title_to_app_name("WhatsApp.Root.exe - WhatsApp"),
+            "WhatsApp",
+        )
+
+    def test_activity_title_to_app_name_cleans_bare_executable_names(self):
+        from journal.activity_titles import activity_title_to_app_name
+
+        self.assertEqual(activity_title_to_app_name("chrome.exe"), "Google Chrome")
+        self.assertEqual(activity_title_to_app_name("Code.exe"), "Visual Studio Code")
+
+
 class ActivityStoreTests(SimpleTestCase):
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()

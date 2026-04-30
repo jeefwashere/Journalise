@@ -3,6 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import "../../styles/dashboard/MainPage.css";
 import TrackingToggle from "../../components/TrackingToggle";
 import { useTracking } from "../../contexts/TrackingContext";
+import {
+  getPetImage,
+  petTypeToIndex,
+  profilePetLevel,
+  type UserProfilePet,
+} from "../../utils/petDisplay";
 
 type CloudConfig = {
   top: number;
@@ -34,7 +40,6 @@ type Flower = {
 const API_BASE_URL = "";
 const HOME_STATE_KEY = "journaliseHomeState";
 
-const PET_FOLDERS = ["Dogs", "Cats", "Bunny", "Frogs"];
 const FLOWER_BY_CATEGORY: Record<string, number> = {
   communication: 4,
   other: 5,
@@ -42,11 +47,7 @@ const FLOWER_BY_CATEGORY: Record<string, number> = {
   work: 7,
   break: 8,
 };
-
-const petAssets = import.meta.glob("../../assets/{Dogs,Cats,Bunny,Frogs}/*.png", {
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
+const DEFAULT_HOME_FLOWERS = [4, 5, 6, 7, 8, 4, 5, 6, 7, 8, 4, 6];
 
 const flowerAssets = import.meta.glob("../../assets/Flowers/*.png", {
   eager: true,
@@ -83,10 +84,10 @@ function loadSavedPet(): HomePet {
 
     return {
       petType: clamp(Number(saved?.petType ?? 0), 0, 3),
-      petLevel: clamp(Number(saved?.petLevel ?? 0), 0, 3),
+      petLevel: clamp(Number(saved?.petLevel ?? 1), 1, 3),
     };
   } catch {
-    return { petType: 0, petLevel: 0 };
+    return { petType: 0, petLevel: 1 };
   }
 }
 
@@ -113,21 +114,6 @@ function flowerTypesFromStats(stats: ApiStat[]) {
 
     return Array.from({ length: count }, () => flowerType);
   });
-}
-
-function getPetImage(petType: number, petLevel: number, petState: number) {
-  const folder = PET_FOLDERS[petType] || PET_FOLDERS[0];
-  const requestedName = `${petType}${petLevel}${petState}.png`;
-  const fallbackName = `${petType}0${petState}.png`;
-  const restingName = `${petType}${petLevel}0.png`;
-  const defaultName = "000.png";
-
-  return (
-    petAssets[`../../assets/${folder}/${requestedName}`] ||
-    petAssets[`../../assets/${folder}/${fallbackName}`] ||
-    petAssets[`../../assets/${folder}/${restingName}`] ||
-    petAssets[`../../assets/Dogs/${defaultName}`]
-  );
 }
 
 function getFlowerImage(type: number) {
@@ -165,16 +151,13 @@ export default function MainPage() {
 
         if (!response.ok) return;
 
-        const user = await response.json();
-        const currentPetType = user?.profile?.current_pet?.pet_type;
-        const nextPetType = ["dog", "cat", "bunny", "frog"].indexOf(
-          currentPetType,
-        );
-        const nextPetLevel = Number(user?.profile?.pet_level ?? 1) - 1;
+        const user: { profile?: UserProfilePet } = await response.json();
+        const nextPetType = petTypeToIndex(user?.profile?.current_pet?.pet_type);
+        const nextPetLevel = profilePetLevel(user?.profile);
 
-        if (isMounted && nextPetType >= 0) {
+        if (isMounted) {
           setPetType(clamp(nextPetType, 0, 3));
-          setPetLevel(clamp(nextPetLevel, 0, 3));
+          setPetLevel(nextPetLevel);
         }
       } catch {
         // Local signup state is enough until the account endpoint is available.
@@ -239,7 +222,7 @@ export default function MainPage() {
   }, [isTracking]);
 
   const flowers = useMemo<Flower[]>(
-    () => makeFlowerPatch(earnedFlowerTypes),
+    () => makeFlowerPatch(earnedFlowerTypes.length ? earnedFlowerTypes : DEFAULT_HOME_FLOWERS),
     [earnedFlowerTypes],
   );
 

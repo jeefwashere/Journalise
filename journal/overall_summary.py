@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 
 from journal.env_utils import get_env_value
+from journal.activity_titles import activity_title_to_app_name
 from journal.hourly_summary import build_hourly_summary_path
 from journal.management.commands.collect_activity import build_vision_summary_path
 from journal.privacy import sanitize_text
@@ -49,6 +50,41 @@ def clean_vision_summary_entries(
                 "summary": sanitize_text(summary),
             }
         )
+
+    return clean_entries
+
+
+def clean_hourly_summary_entries(
+    hourly_summaries: list[dict[str, object]],
+) -> list[dict[str, object]]:
+    clean_entries: list[dict[str, object]] = []
+
+    for hour in hourly_summaries:
+        clean_hour = dict(hour)
+        clean_categories = []
+
+        categories = hour.get("categories")
+        if isinstance(categories, list):
+            for category in categories:
+                if not isinstance(category, dict):
+                    continue
+
+                clean_category = dict(category)
+                titles = category.get("titles")
+                if isinstance(titles, list):
+                    app_names = []
+                    for title in titles:
+                        if not isinstance(title, str):
+                            continue
+                        app_name = activity_title_to_app_name(title)
+                        if app_name and app_name not in app_names:
+                            app_names.append(app_name)
+                    clean_category["titles"] = app_names
+
+                clean_categories.append(clean_category)
+
+        clean_hour["categories"] = clean_categories
+        clean_entries.append(clean_hour)
 
     return clean_entries
 
@@ -140,10 +176,11 @@ def generate_and_persist_overall_summary(
     hourly_summaries = _load_json_list(hourly_path)
 
     clean_vision_summaries = clean_vision_summary_entries(vision_summaries)
+    clean_hourly_summaries = clean_hourly_summary_entries(hourly_summaries)
 
     summary = request_gemini_overall_summary(
         clean_vision_summaries,
-        hourly_summaries,
+        clean_hourly_summaries,
         env_path=env_path,
     )
 
@@ -153,6 +190,7 @@ def generate_and_persist_overall_summary(
         "summary_model": DEFAULT_GEMINI_MODEL,
         "moderation_results": [],
         "clean_vision_summaries": clean_vision_summaries,
+        "clean_hourly_summaries": clean_hourly_summaries,
         "overall_summary": summary,
     }
 

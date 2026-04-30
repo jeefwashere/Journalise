@@ -1,11 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../styles/dashboard/AccountPage.css";
+import {
+  getPetImage,
+  getProfilePetLabel,
+  getProfilePetName,
+  petTypeToIndex,
+  profilePetLevel,
+} from "../../utils/petDisplay";
 
 type AccountPet = {
   pet_type?: string;
   pet_type_display?: string;
   level?: number;
+  mood?: string;
   name?: string;
 };
 
@@ -15,7 +23,9 @@ type AccountUser = {
   name?: string;
   profile?: {
     display_name?: string;
+    pet_name?: string;
     pet_level?: number;
+    pet_mood?: string;
     current_pet?: AccountPet | null;
   };
 };
@@ -30,13 +40,6 @@ type SavedHomeState = {
 
 const API_BASE_URL = "";
 const HOME_STATE_KEY = "journaliseHomeState";
-const PET_FOLDERS = ["Dogs", "Cats", "Bunny", "Frogs"];
-const PET_LABELS = ["Dog", "Cat", "Bunny", "Frog"];
-
-const petAssets = import.meta.glob("../../assets/{Dogs,Cats,Bunny,Frogs}/*.png", {
-  eager: true,
-  import: "default",
-}) as Record<string, string>;
 
 function getToken() {
   return (
@@ -55,23 +58,6 @@ function loadSavedHomeState(): SavedHomeState {
   } catch {
     return {};
   }
-}
-
-function petTypeToIndex(value?: string) {
-  const index = ["dog", "cat", "bunny", "frog"].indexOf(value || "");
-  return index >= 0 ? index : 0;
-}
-
-function getPetImage(petType: number, petLevel: number) {
-  const folder = PET_FOLDERS[petType] || PET_FOLDERS[0];
-  const requestedName = `${petType}${petLevel}0.png`;
-  const fallbackName = `${petType}00.png`;
-
-  return (
-    petAssets[`../../assets/${folder}/${requestedName}`] ||
-    petAssets[`../../assets/${folder}/${fallbackName}`] ||
-    petAssets["../../assets/Dogs/000.png"]
-  );
 }
 
 export default function AccountPage() {
@@ -123,15 +109,18 @@ export default function AccountPage() {
   const apiPet = user?.profile?.current_pet;
   const savedPetType = clamp(Number(savedHomeState.petType ?? 0), 0, 3);
   const petType = apiPet ? petTypeToIndex(apiPet.pet_type) : savedPetType;
-  const apiLevel = Number(user?.profile?.pet_level ?? apiPet?.level);
-  const savedLevel = Number(savedHomeState.petLevel ?? 0) + 1;
-  const displayLevel = clamp(Number.isFinite(apiLevel) ? apiLevel : savedLevel, 1, 4);
-  const assetLevel = clamp(displayLevel - 1, 0, 3);
-  const petName = apiPet?.name || savedHomeState.petName || "Your pet";
-  const petLabel = apiPet?.pet_type_display || PET_LABELS[petType] || "Pet";
+  const savedLevel = Number(savedHomeState.petLevel ?? 1);
+  const displayLevel = user?.profile
+    ? profilePetLevel(user.profile)
+    : clamp(Number.isFinite(savedLevel) ? savedLevel : 1, 1, 3);
+  const petName = user?.profile
+    ? getProfilePetName(user.profile)
+    : savedHomeState.petName || "Your pet";
+  const petLabel = user?.profile
+    ? getProfilePetLabel(user.profile)
+    : ["Dog", "Cat", "Bunny"][petType] || "Pet";
   const displayName =
     user?.profile?.display_name ||
-    user?.name ||
     user?.username ||
     savedHomeState.username ||
     "Journalise friend";
@@ -187,7 +176,7 @@ export default function AccountPage() {
           </div>
 
           <img
-            src={getPetImage(petType, assetLevel)}
+            src={getPetImage(petType, displayLevel)}
             alt={`${petName}, ${petLabel}`}
             className="account-pet"
           />
