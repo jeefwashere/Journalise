@@ -3,11 +3,12 @@ from dataclasses import asdict, dataclass
 
 @dataclass
 class ActivitySession:
-    app_name: str
-    bundle_id: str
+    title: str
+    category: str
+    description: str
     started_at: str
     ended_at: str
-    duration_seconds: int
+    created_at: str
 
-    def to_dict(self) -> dict[str, str | int]:
+    def to_dict(self) -> dict[str, str]:
         return asdict(self)
