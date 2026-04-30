@@ -90,7 +90,3 @@ db.sqlite3
 
 *.md
 .worktrees/
-
-# Local activity data
-activity_data/
-.env
