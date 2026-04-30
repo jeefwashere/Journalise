@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../../api/api";
@@ -57,6 +57,9 @@ export default function JournalHistoryPage() {
   const [stats, setStats] = useState<ApiStat[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const paperWrapRef = useRef<HTMLElement | null>(null);
+  const entryRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [timelinePositions, setTimelinePositions] = useState<Record<string, number>>({});
 
   useEffect(() => {
     async function loadJournalHistory() {
@@ -158,6 +161,60 @@ export default function JournalHistoryPage() {
     }. Most of your activity happened in ${apps}.`;
   }
 
+  useLayoutEffect(() => {
+    const updateTimelinePositions = () => {
+      const nextPositions: Record<string, number> = {};
+
+      filtered.forEach((hour) => {
+        const entry = entryRefs.current[hour.time_range];
+
+        if (!entry) {
+          return;
+        }
+
+        const entryRect = entry.getBoundingClientRect();
+        nextPositions[hour.time_range] = entryRect.bottom;
+      });
+
+      setTimelinePositions(nextPositions);
+    };
+
+    updateTimelinePositions();
+
+    const resizeObserver = new ResizeObserver(updateTimelinePositions);
+
+    if (paperWrapRef.current) {
+      resizeObserver.observe(paperWrapRef.current);
+    }
+
+    filtered.forEach((hour) => {
+      const entry = entryRefs.current[hour.time_range];
+
+      if (entry) {
+        resizeObserver.observe(entry);
+      }
+    });
+
+    window.addEventListener("resize", updateTimelinePositions);
+    window.addEventListener("scroll", updateTimelinePositions, { passive: true });
+    const animationFrame = requestAnimationFrame(updateTimelinePositions);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateTimelinePositions);
+      window.removeEventListener("scroll", updateTimelinePositions);
+      cancelAnimationFrame(animationFrame);
+    };
+  }, [filtered, openEntry, showAi, loading, error]);
+
+  const handleTimelineJump = (hour: JournalHour, index: number) => {
+    setOpenEntry(index);
+    entryRefs.current[hour.time_range]?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("token");
@@ -187,7 +244,7 @@ export default function JournalHistoryPage() {
         </div>
       </nav>
 
-      <main className="paper-wrap">
+      <main className="paper-wrap" ref={paperWrapRef}>
         <section className="paper">
           <h1>My Journal History</h1>
           <p className="subtitle">Your day, rewritten by AI.</p>
@@ -245,6 +302,9 @@ export default function JournalHistoryPage() {
           {filtered.map((hour, index) => (
             <motion.div
               key={hour.time_range}
+              ref={(element) => {
+                entryRefs.current[hour.time_range] = element;
+              }}
               className="entry"
               whileHover={{ y: -4 }}
               initial={{ opacity: 0, y: 14 }}
@@ -309,8 +369,13 @@ export default function JournalHistoryPage() {
         </section>
 
         <aside className="timeline">
-          {journalHours.map((item) => (
-            <button key={item.time_range}>
+          {filtered.map((item, index) => (
+            <button
+              key={item.time_range}
+              type="button"
+              style={{ top: `${timelinePositions[item.time_range] || 0}px` }}
+              onClick={() => handleTimelineJump(item, index)}
+            >
               {item.time_range.slice(0, 5)}
             </button>
           ))}

@@ -435,7 +435,7 @@
   align-items: flex-end;
   gap: 14px;
   flex-wrap: wrap;
-  padding-right: clamp(120px, 18vw, 210px);
+  padding-right: 0;
 }
 
 .garden img {
@@ -469,7 +469,7 @@
   align-items: baseline;
   gap: 10px;
   flex-wrap: wrap;
-  padding-right: clamp(120px, 18vw, 210px);
+  padding-right: 0;
 }
 
 .flower-info strong {
@@ -491,33 +491,18 @@
 /* PET */
 
 .teacher-pet {
-  position: absolute;
-  right: clamp(4px, 1.5vw, 18px);
-  bottom: clamp(2px, 1vh, 10px);
-  z-index: 30;
+  position: fixed;
+  right: clamp(14px, 2vw, 28px);
+  bottom: clamp(10px, 2vh, 24px);
+  z-index: 70;
   cursor: pointer;
   pointer-events: auto;
 }
 
 .teacher-pet img {
-  width: clamp(230px, 22vw, 360px);
+  width: clamp(150px, 14vw, 220px);
   height: auto;
   display: block;
-}
-
-.speech {
-  position: absolute;
-  right: clamp(175px, 17vw, 285px);
-  bottom: clamp(165px, 16vw, 260px);
-  width: 125px;
-  padding: 7px 10px;
-  background: #fff8eb;
-  border: 3px solid #222;
-  border-radius: 50%;
-  font-size: 1.12rem;
-  text-align: center;
-  z-index: 31;
-  pointer-events: none;
 }
 
 /* MODAL */
@@ -585,7 +570,6 @@
 
   .right-panel {
     overflow: visible;
-    padding-bottom: 230px;
   }
 }
 
@@ -632,27 +616,13 @@
     grid-template-columns: 1fr;
   }
 
-  .garden {
-    padding-right: 0;
-  }
-
-  .flower-info {
-    padding-right: 0;
-  }
-
   .teacher-pet {
-    right: 0;
-    bottom: 0;
+    right: 8px;
+    bottom: 8px;
   }
 
   .teacher-pet img {
-    width: 230px;
-  }
-
-  .speech {
-    right: 165px;
-    bottom: 165px;
-    width: 115px;
+    width: 150px;
   }
 
   .hour-row {
