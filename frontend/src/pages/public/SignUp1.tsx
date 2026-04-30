@@ -1,7 +1,8 @@
 import React, { useState, useRef } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import api from "../../api/api";
 import "../../styles/public/signup.css";
-import placeholder from "../../assets/placeholder.jpg";
 
 import pet1Default from "../../assets/Dogs/000.png";
 import pet1Selected from "../../assets/Dogs/002.png";
@@ -9,8 +10,8 @@ import pet1Selected from "../../assets/Dogs/002.png";
 import pet2Default from "../../assets/Cats/100.png";
 import pet2Selected from "../../assets/Cats/102.png";
 
-import pet3Default from "../../assets/placeholder.jpg";
-import pet3Selected from "../../assets/placeholder.jpg";
+import pet3Default from "../../assets/Bunny/200.png";
+import pet3Selected from "../../assets/Bunny/202.png";
 
 import pet4Default from "../../assets/placeholder.jpg";
 import pet4Selected from "../../assets/placeholder.jpg";
@@ -30,11 +31,38 @@ type Pet = {
 };
 
 const PETS: Pet[] = [
-  { id: "pet1", label: "Pet 1", defaultImg: pet1Default, selectedImg: pet1Selected },
-  { id: "pet2", label: "Pet 2", defaultImg: pet2Default, selectedImg: pet2Selected },
-  { id: "pet3", label: "Pet 3", defaultImg: pet3Default, selectedImg: pet3Selected },
-  { id: "pet4", label: "Pet 4", defaultImg: pet4Default, selectedImg: pet4Selected },
+  {
+    id: "dog",
+    label: "Dog",
+    defaultImg: pet1Default,
+    selectedImg: pet1Selected,
+  },
+  {
+    id: "cat",
+    label: "Cat",
+    defaultImg: pet2Default,
+    selectedImg: pet2Selected,
+  },
+  {
+    id: "bunny",
+    label: "Bunny",
+    defaultImg: pet3Default,
+    selectedImg: pet3Selected,
+  },
+  {
+    id: "frog",
+    label: "Frog",
+    defaultImg: pet4Default,
+    selectedImg: pet4Selected,
+  },
 ];
+
+const PET_TYPE_BY_ID: Record<string, number> = {
+  dog: 0,
+  cat: 1,
+  bunny: 2,
+  frog: 3,
+};
 
 const Signup: React.FC = () => {
   const navigate = useNavigate();
@@ -47,7 +75,9 @@ const Signup: React.FC = () => {
     username: "",
     email: "",
     password: "",
+    form: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [selectedPet, setSelectedPet] = useState<string | null>(null);
   const [petName, setPetName] = useState("");
@@ -56,7 +86,7 @@ const Signup: React.FC = () => {
   const secondPageRef = useRef<HTMLDivElement>(null);
 
   const validate = () => {
-    const newErrors = { username: "", email: "", password: "" };
+    const newErrors = { username: "", email: "", password: "", form: "" };
     let valid = true;
     if (!username) {
       newErrors.username = "Username is required";
@@ -72,6 +102,42 @@ const Signup: React.FC = () => {
     }
     setErrors(newErrors);
     return valid;
+  };
+
+  const getSignupErrorMessage = (error: unknown) => {
+    if (!axios.isAxiosError(error)) {
+      return "Unable to create your account. Please try again.";
+    }
+
+    const data = error.response?.data;
+
+    if (!data) {
+      return "Unable to create your account. Please try again.";
+    }
+
+    if (typeof data === "string") {
+      return data;
+    }
+
+    if (typeof data.detail === "string") {
+      return data.detail;
+    }
+
+    const fieldMessages = ["username", "email", "password"]
+      .flatMap((field) => {
+        const value = data[field];
+
+        if (Array.isArray(value)) {
+          return value.map(String);
+        }
+
+        return typeof value === "string" ? [value] : [];
+      })
+      .filter(Boolean);
+
+    return (
+      fieldMessages[0] || "Unable to create your account. Please try again."
+    );
   };
 
   const smoothScrollTo = (targetY: number, duration: number) => {
@@ -107,13 +173,48 @@ const Signup: React.FC = () => {
     }
   };
 
-  const handleLetsGo = () => {
+  const handleLetsGo = async () => {
     if (!petName.trim()) {
       setPetNameError("Please give your pet a name!");
       return;
     }
     setPetNameError("");
-    console.log("All done!", { username, email, selectedPet, petName });
+    setIsSubmitting(true);
+
+    try {
+      const response = await api.post("register/", {
+        username: username.trim(),
+        email: email.trim(),
+        password,
+      });
+
+      const accessToken = response.data?.access_token;
+
+      if (accessToken) {
+        localStorage.setItem("accessToken", accessToken);
+      }
+
+      localStorage.setItem(
+        "journaliseHomeState",
+        JSON.stringify({
+          username: username.trim(),
+          email: email.trim(),
+          petType: selectedPet ? PET_TYPE_BY_ID[selectedPet] : 0,
+          petLevel: 0,
+          petName: petName.trim(),
+          flowerTypes: [4, 5, 6, 7, 8],
+        }),
+      );
+      localStorage.setItem("journaliseIsAuthenticated", "true");
+      navigate("/home");
+    } catch (error) {
+      setErrors((currentErrors) => ({
+        ...currentErrors,
+        form: getSignupErrorMessage(error),
+      }));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const clouds: CloudConfig[] = [
@@ -264,18 +365,20 @@ const Signup: React.FC = () => {
                 className={`pet-btn ${selectedPet === pet.id ? "pet-btn--selected" : ""}`}
                 onClick={() => {
                   if (selectedPet === pet.id) {
-                    setSelectedPet(null);       // deselect
+                    setSelectedPet(null); // deselect
                     setPetName("");
                     setPetNameError("");
                   } else {
-                    setSelectedPet(pet.id);     // select
+                    setSelectedPet(pet.id); // select
                     setPetName("");
                     setPetNameError("");
                   }
                 }}
               >
                 <img
-                  src={selectedPet === pet.id ? pet.selectedImg : pet.defaultImg}
+                  src={
+                    selectedPet === pet.id ? pet.selectedImg : pet.defaultImg
+                  }
                   alt={pet.label}
                   className="pet-img"
                 />
@@ -300,11 +403,12 @@ const Signup: React.FC = () => {
 
               <button
                 className="btn btn-letsgo"
-                disabled={!petName.trim()}
+                disabled={!petName.trim() || isSubmitting}
                 onClick={handleLetsGo}
               >
-                Next →
+                {isSubmitting ? "Creating..." : "Next →"}
               </button>
+              <span className="error">{errors.form}</span>
             </div>
           )}
         </div>

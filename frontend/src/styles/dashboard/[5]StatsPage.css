@@ -36,22 +36,37 @@
   transform: rotate(-1deg);
 }
 
-.stats-nav-icons {
+.stats-nav-links {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 10px;
 }
 
-.icon-btn {
-  border: 0;
-  background: transparent;
-  color: #111;
-  text-decoration: none;
-  font-family: inherit;
-  font-size: 2.45rem;
+.stats-nav-links a,
+.stats-nav-links button {
+  min-height: 38px;
+  padding: 5px 12px;
+  color: #1f2d1d;
+  font-family: "Patrick Hand", cursive;
+  font-size: 1.25rem;
   line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
+  background: rgba(255, 254, 230, 0.92);
+  border: 2px solid rgba(45, 95, 138, 0.72);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 rgba(45, 95, 138, 0.72);
+  transition:
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.stats-nav-links a:hover,
+.stats-nav-links button:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(45, 95, 138, 0.72);
 }
 
 /* DROPDOWN */
@@ -69,16 +84,24 @@
   box-shadow: 5px 6px 0 rgba(0, 0, 0, 0.2);
 }
 
-.menu-dropdown a {
+.menu-dropdown a,
+.menu-dropdown button {
   display: block;
+  width: 100%;
   padding: 5px 8px;
   color: #222;
+  font-family: inherit;
   text-decoration: none;
+  text-align: left;
   font-size: 1.28rem;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
   border-radius: 12px;
 }
 
-.menu-dropdown a:hover {
+.menu-dropdown a:hover,
+.menu-dropdown button:hover {
   background: #b7eadf;
 }
 
@@ -560,8 +583,17 @@
     font-size: 2.2rem;
   }
 
-  .icon-btn {
-    font-size: 2rem;
+  .stats-nav-links {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .stats-nav-links a,
+  .stats-nav-links button {
+    min-height: 32px;
+    padding: 4px 9px;
+    font-size: 1rem;
   }
 
   .stats-content {

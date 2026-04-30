@@ -151,6 +151,58 @@ class CurrentUserViewTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
 
+class AuthViewTests(TestCase):
+    def test_register_creates_user_with_hashed_password_and_returns_token(self):
+        response = self.client.post(
+            reverse("register"),
+            data={
+                "username": "new-user",
+                "email": "new@example.com",
+                "password": "secure-pass-123",
+            },
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        data = response.json()
+        user = User.objects.get(username="new-user")
+
+        self.assertTrue(user.check_password("secure-pass-123"))
+        self.assertEqual(user.email, "new@example.com")
+        self.assertEqual(user.profile.display_name, "new-user")
+        self.assertEqual(data["token_type"], "Bearer")
+        self.assertIn("access_token", data)
+        self.assertIn("access_token", response.cookies)
+
+    def test_login_returns_token_for_valid_credentials(self):
+        User.objects.create_user(
+            username="login-user",
+            email="login@example.com",
+            password="secure-pass-123",
+        )
+
+        response = self.client.post(
+            reverse("login"),
+            data={"username": "login-user", "password": "secure-pass-123"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["token_type"], "Bearer")
+        self.assertIn("access_token", data)
+        self.assertEqual(data["user"]["username"], "login-user")
+
+    def test_login_rejects_invalid_credentials(self):
+        response = self.client.post(
+            reverse("login"),
+            data={"username": "missing-user", "password": "wrong-pass"},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+
 @override_settings(GOOGLE_OAUTH_CLIENT_ID="google-client-id")
 class GoogleLoginViewTests(TestCase):
     @patch("accounts.views.verify_google_id_token")
