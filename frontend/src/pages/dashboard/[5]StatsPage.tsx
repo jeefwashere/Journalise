@@ -32,7 +32,7 @@ interface HourPoint {
   raw: ApiStat[];
 }
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "/api";
 
 const flowerMap: Record<string, string> = {
   study: flowerStudy,
@@ -208,9 +208,7 @@ export default function StatsPage() {
               >
                 <Link to="/stats">My Stats</Link>
                 <Link to="/account">My Account</Link>
-                <Link to="/journal">Journal History</Link>
-                <Link to="/pet-room">Pet Room</Link>
-                <Link to="/settings">Settings</Link>
+                <Link to="/journal-history">Journal History</Link>
                 <Link to="/logout">Logout</Link>
               </motion.div>
             )}

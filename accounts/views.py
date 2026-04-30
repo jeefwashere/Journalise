@@ -136,6 +136,7 @@ def get_or_create_google_user(google_payload):
 def auth_response(user, access_token, status_code=status.HTTP_200_OK):
     response = Response(
         {
+            "access_token": access_token,
             "token_type": "Bearer",
             "expires_in": settings.JOURNALISE_ACCESS_TOKEN_SECONDS,
             "user": UserSerializer(user).data,

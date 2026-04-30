@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../../api/api";
 import "../../styles/public/login.css";
 
 const Login: React.FC = () => {
@@ -11,6 +12,8 @@ const Login: React.FC = () => {
     username: "",
     password: "",
   });
+  const [formError, setFormError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const validate = () => {
     const newErrors = { username: "", password: "" };
@@ -30,10 +33,29 @@ const Login: React.FC = () => {
     return valid;
   };
 
-  const handleLogin = () => {
-    if (validate()) {
-      console.log("Logging in...", { username, password });
-      // hook backend here later
+  const handleLogin = async () => {
+    if (!validate()) {
+      return;
+    }
+
+    setLoading(true);
+    setFormError("");
+
+    try {
+      const response = await api.post("auth/login/", {
+        username,
+        password,
+      });
+
+      localStorage.setItem("accessToken", response.data.access_token);
+      localStorage.setItem("currentUser", JSON.stringify(response.data.user));
+      navigate("/dashboard");
+    } catch (error: any) {
+      setFormError(
+        error.response?.data?.detail || "Could not log in. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -94,9 +116,10 @@ const Login: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
               <span className="error">{errors.password}</span>
+              <span className="error">{formError}</span>
 
-              <button className="btn btn-login" onClick={handleLogin}>
-                Log In
+              <button className="btn btn-login" onClick={handleLogin} disabled={loading}>
+                {loading ? "Logging in..." : "Log In"}
               </button>
 
               <div className="divider">
