@@ -1,175 +1,392 @@
-from datetime import datetime, timezone as dt_timezone
+import importlib
+import json
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+from unittest import mock
 
-from django.contrib.auth import get_user_model
-from django.test import override_settings
-from django.urls import include, path
-from rest_framework import status
-from rest_framework.test import APIClient, APITestCase
-
-from .models import Activity
-
-
-urlpatterns = [
-    path("", include("journal.urls")),
-]
-
-User = get_user_model()
+from django.core.management import call_command
+from django.test import SimpleTestCase
+from journal.activity_types import ActivitySession
 
 
-@override_settings(ROOT_URLCONF=__name__)
-class ActivityViewTests(APITestCase):
-    list_url = "/activities/"
-
-    def setUp(self):
-        self.user = User.objects.create_user(
-            username="journal-user",
-            email="journal@example.com",
-            password="secret-pass",
-        )
-        self.other_user = User.objects.create_user(
-            username="other-user",
-            email="other@example.com",
-            password="secret-pass",
-        )
-        self.client.force_authenticate(user=self.user)
-
-    def create_activity(
-        self,
-        *,
-        user=None,
-        title="Focused work",
-        category=Activity.Category.WORK,
-        description="",
-        started_at=None,
-        ended_at=None,
-    ):
-        return Activity.objects.create(
-            user=user or self.user,
-            title=title,
-            category=category,
-            description=description,
-            started_at=started_at
-            or datetime(2026, 4, 29, 9, 0, tzinfo=dt_timezone.utc),
-            ended_at=ended_at,
+class ActivitySessionTests(SimpleTestCase):
+    def test_to_dict_returns_serializable_activity_session_data(self):
+        session = ActivitySession(
+            app_name="Safari",
+            bundle_id="com.apple.Safari",
+            started_at="2026-04-29T08:00:00Z",
+            ended_at="2026-04-29T08:30:00Z",
+            duration_seconds=1800,
         )
 
-    def detail_url(self, activity):
-        return f"/activities/{activity.pk}/"
-
-    def test_list_view_requires_authentication(self):
-        response = APIClient().get(self.list_url)
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_list_view_returns_only_authenticated_users_activities_ordered_newest_first(
-        self,
-    ):
-        earlier = self.create_activity(
-            title="Morning reading",
-            started_at=datetime(2026, 4, 29, 8, 0, tzinfo=dt_timezone.utc),
-        )
-        later = self.create_activity(
-            title="Afternoon build",
-            started_at=datetime(2026, 4, 29, 14, 0, tzinfo=dt_timezone.utc),
-        )
-        self.create_activity(
-            user=self.other_user,
-            title="Someone else's activity",
-            started_at=datetime(2026, 4, 29, 15, 0, tzinfo=dt_timezone.utc),
-        )
-
-        response = self.client.get(self.list_url)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual([item["id"] for item in response.data], [later.pk, earlier.pk])
         self.assertEqual(
-            [item["title"] for item in response.data],
-            ["Afternoon build", "Morning reading"],
-        )
-
-    def test_list_view_filters_activities_by_started_at_date(self):
-        target = self.create_activity(
-            title="Target day",
-            started_at=datetime(2026, 4, 29, 10, 0, tzinfo=dt_timezone.utc),
-        )
-        self.create_activity(
-            title="Previous day",
-            started_at=datetime(2026, 4, 28, 10, 0, tzinfo=dt_timezone.utc),
-        )
-        self.create_activity(
-            user=self.other_user,
-            title="Other user's target day",
-            started_at=datetime(2026, 4, 29, 11, 0, tzinfo=dt_timezone.utc),
-        )
-
-        response = self.client.get(self.list_url, {"date": "2026-04-29"})
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual([item["id"] for item in response.data], [target.pk])
-
-    def test_create_view_assigns_the_authenticated_user(self):
-        response = self.client.post(
-            self.list_url,
+            session.to_dict(),
             {
-                "title": "Write journal tests",
-                "category": Activity.Category.STUDY,
-                "description": "Cover the API views",
-                "started_at": "2026-04-29T14:30:00Z",
-                "ended_at": "2026-04-29T15:00:00Z",
+                "app_name": "Safari",
+                "bundle_id": "com.apple.Safari",
+                "started_at": "2026-04-29T08:00:00Z",
+                "ended_at": "2026-04-29T08:30:00Z",
+                "duration_seconds": 1800,
             },
-            format="json",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        activity = Activity.objects.get(pk=response.data["id"])
-        self.assertEqual(activity.user, self.user)
-        self.assertEqual(activity.title, "Write journal tests")
-        self.assertEqual(activity.category, Activity.Category.STUDY)
-        self.assertEqual(response.data["category_display"], "Study")
 
-    def test_detail_view_returns_authenticated_users_activity(self):
-        activity = self.create_activity(title="Private activity")
+class ActivityStoreTests(SimpleTestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.base_dir = Path(self.temp_dir.name)
+        self.date_str = "2026-04-29"
+        self.day_path = self.base_dir / "activity_logs" / f"{self.date_str}.json"
 
-        response = self.client.get(self.detail_url(activity))
+    def _load_store_module(self):
+        try:
+            return importlib.import_module("journal.activity_store")
+        except ModuleNotFoundError:
+            self.fail("journal.activity_store is not implemented yet")
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], activity.pk)
-        self.assertEqual(response.data["title"], "Private activity")
-
-    def test_detail_view_does_not_expose_other_users_activity(self):
-        activity = self.create_activity(
-            user=self.other_user,
-            title="Other user's activity",
+    def test_append_session_appends_to_the_days_json_array(self):
+        activity_store = self._load_store_module()
+        session = ActivitySession(
+            app_name="Safari",
+            bundle_id="com.apple.Safari",
+            started_at="2026-04-29T08:00:00Z",
+            ended_at="2026-04-29T08:30:00Z",
+            duration_seconds=1800,
         )
 
-        response = self.client.get(self.detail_url(activity))
+        activity_store.append_session(self.base_dir, self.date_str, session)
 
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-
-    def test_update_view_updates_authenticated_users_activity(self):
-        activity = self.create_activity(
-            title="Old title",
-            category=Activity.Category.OTHER,
+        self.assertEqual(
+            json.loads(self.day_path.read_text(encoding="utf-8")),
+            [session.to_dict()],
         )
 
-        response = self.client.patch(
-            self.detail_url(activity),
-            {
-                "title": "Updated title",
-                "category": Activity.Category.COMMUNICATION,
-            },
-            format="json",
+    def test_append_session_preserves_existing_sessions_when_appending(self):
+        activity_store = self._load_store_module()
+        existing_session = ActivitySession(
+            app_name="Notes",
+            bundle_id="com.apple.Notes",
+            started_at="2026-04-29T07:30:00Z",
+            ended_at="2026-04-29T07:45:00Z",
+            duration_seconds=900,
+        )
+        new_session = ActivitySession(
+            app_name="Safari",
+            bundle_id="com.apple.Safari",
+            started_at="2026-04-29T08:00:00Z",
+            ended_at="2026-04-29T08:30:00Z",
+            duration_seconds=1800,
+        )
+        self.day_path.parent.mkdir(parents=True, exist_ok=True)
+        self.day_path.write_text(
+            json.dumps([existing_session.to_dict()]),
+            encoding="utf-8",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        activity.refresh_from_db()
-        self.assertEqual(activity.title, "Updated title")
-        self.assertEqual(activity.category, Activity.Category.COMMUNICATION)
+        activity_store.append_session(self.base_dir, self.date_str, new_session)
 
-    def test_delete_view_deletes_authenticated_users_activity(self):
-        activity = self.create_activity(title="Delete me")
+        self.assertEqual(
+            json.loads(self.day_path.read_text(encoding="utf-8")),
+            [existing_session.to_dict(), new_session.to_dict()],
+        )
 
-        response = self.client.delete(self.detail_url(activity))
+    def test_append_session_recovers_from_malformed_existing_content(self):
+        activity_store = self._load_store_module()
+        new_session = ActivitySession(
+            app_name="Safari",
+            bundle_id="com.apple.Safari",
+            started_at="2026-04-29T08:00:00Z",
+            ended_at="2026-04-29T08:30:00Z",
+            duration_seconds=1800,
+        )
+        self.day_path.parent.mkdir(parents=True, exist_ok=True)
+        self.day_path.write_text("{not valid json", encoding="utf-8")
 
-        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertFalse(Activity.objects.filter(pk=activity.pk).exists())
+        activity_store.append_session(self.base_dir, self.date_str, new_session)
+
+        self.assertEqual(
+            json.loads(self.day_path.read_text(encoding="utf-8")),
+            [new_session.to_dict()],
+        )
+
+    def test_append_session_recovers_from_existing_content_that_is_not_a_list(self):
+        activity_store = self._load_store_module()
+        new_session = ActivitySession(
+            app_name="Safari",
+            bundle_id="com.apple.Safari",
+            started_at="2026-04-29T08:00:00Z",
+            ended_at="2026-04-29T08:30:00Z",
+            duration_seconds=1800,
+        )
+        self.day_path.parent.mkdir(parents=True, exist_ok=True)
+        self.day_path.write_text(json.dumps({"unexpected": "value"}), encoding="utf-8")
+
+        activity_store.append_session(self.base_dir, self.date_str, new_session)
+
+        self.assertEqual(
+            json.loads(self.day_path.read_text(encoding="utf-8")),
+            [new_session.to_dict()],
+        )
+
+    def test_load_sessions_for_date_returns_the_days_dictionaries(self):
+        activity_store = self._load_store_module()
+        matching_session = ActivitySession(
+            app_name="Safari",
+            bundle_id="com.apple.Safari",
+            started_at="2026-04-29T08:00:00Z",
+            ended_at="2026-04-29T08:30:00Z",
+            duration_seconds=1800,
+        )
+        self.day_path.parent.mkdir(parents=True, exist_ok=True)
+        self.day_path.write_text(
+            json.dumps([matching_session.to_dict()]),
+            encoding="utf-8",
+        )
+
+        sessions = activity_store.load_sessions_for_date(self.base_dir, self.date_str)
+
+        self.assertEqual(sessions, [matching_session.to_dict()])
+
+    def test_load_sessions_for_date_returns_empty_list_when_day_file_is_missing(self):
+        activity_store = self._load_store_module()
+
+        sessions = activity_store.load_sessions_for_date(self.base_dir, self.date_str)
+
+        self.assertEqual(sessions, [])
+
+    def test_load_sessions_for_date_returns_empty_list_for_malformed_json(self):
+        activity_store = self._load_store_module()
+        self.day_path.parent.mkdir(parents=True, exist_ok=True)
+        self.day_path.write_text("{not valid json", encoding="utf-8")
+
+        sessions = activity_store.load_sessions_for_date(self.base_dir, self.date_str)
+
+        self.assertEqual(sessions, [])
+
+    def test_load_sessions_for_date_returns_empty_list_when_json_is_not_a_list(self):
+        activity_store = self._load_store_module()
+        self.day_path.parent.mkdir(parents=True, exist_ok=True)
+        self.day_path.write_text(json.dumps({"app_name": "Safari"}), encoding="utf-8")
+
+        sessions = activity_store.load_sessions_for_date(self.base_dir, self.date_str)
+
+        self.assertEqual(sessions, [])
+
+    def test_load_sessions_for_date_returns_empty_list_when_any_item_is_invalid(self):
+        activity_store = self._load_store_module()
+        self.day_path.parent.mkdir(parents=True, exist_ok=True)
+        self.day_path.write_text(
+            json.dumps(
+                [
+                    {
+                        "app_name": "Safari",
+                        "bundle_id": "com.apple.Safari",
+                        "started_at": "2026-04-29T08:00:00Z",
+                        "ended_at": "2026-04-29T08:30:00Z",
+                    }
+                ]
+            ),
+            encoding="utf-8",
+        )
+
+        sessions = activity_store.load_sessions_for_date(self.base_dir, self.date_str)
+
+        self.assertEqual(sessions, [])
+
+
+class ActivityTrackerTests(SimpleTestCase):
+    def _load_tracker_class(self):
+        try:
+            module = importlib.import_module("journal.activity_tracker")
+        except ModuleNotFoundError:
+            self.fail("journal.activity_tracker is not implemented yet")
+
+        return module.ActivityTracker
+
+    def test_start_session_begins_a_session_that_can_be_finished(self):
+        ActivityTracker = self._load_tracker_class()
+        tracker = ActivityTracker()
+        started_at = datetime(2026, 4, 29, 8, 0, tzinfo=timezone.utc)
+        ended_at = datetime(2026, 4, 29, 8, 30, tzinfo=timezone.utc)
+
+        tracker.start_session("Safari", "com.apple.Safari", started_at)
+        finished_session = tracker.finish_active_session(ended_at)
+
+        self.assertEqual(
+            finished_session,
+            ActivitySession(
+                app_name="Safari",
+                bundle_id="com.apple.Safari",
+                started_at="2026-04-29T08:00:00Z",
+                ended_at="2026-04-29T08:30:00Z",
+                duration_seconds=1800,
+            ),
+        )
+
+    def test_switch_session_finishes_the_previous_session_and_starts_the_next_one(self):
+        ActivityTracker = self._load_tracker_class()
+        tracker = ActivityTracker()
+        first_started_at = datetime(2026, 4, 29, 8, 0, tzinfo=timezone.utc)
+        second_started_at = datetime(2026, 4, 29, 8, 45, tzinfo=timezone.utc)
+        second_ended_at = datetime(2026, 4, 29, 9, 15, tzinfo=timezone.utc)
+
+        tracker.start_session("Safari", "com.apple.Safari", first_started_at)
+        switched_session = tracker.switch_session(
+            "Notes",
+            "com.apple.Notes",
+            second_started_at,
+        )
+        final_session = tracker.finish_active_session(second_ended_at)
+
+        self.assertEqual(
+            switched_session,
+            ActivitySession(
+                app_name="Safari",
+                bundle_id="com.apple.Safari",
+                started_at="2026-04-29T08:00:00Z",
+                ended_at="2026-04-29T08:45:00Z",
+                duration_seconds=2700,
+            ),
+        )
+        self.assertEqual(
+            final_session,
+            ActivitySession(
+                app_name="Notes",
+                bundle_id="com.apple.Notes",
+                started_at="2026-04-29T08:45:00Z",
+                ended_at="2026-04-29T09:15:00Z",
+                duration_seconds=1800,
+            ),
+        )
+
+    def test_finish_active_session_returns_none_when_no_session_is_active(self):
+        ActivityTracker = self._load_tracker_class()
+        tracker = ActivityTracker()
+        ended_at = datetime(2026, 4, 29, 8, 30, tzinfo=timezone.utc)
+
+        self.assertIsNone(tracker.finish_active_session(ended_at))
+
+    def test_start_session_raises_value_error_for_naive_started_at(self):
+        ActivityTracker = self._load_tracker_class()
+        tracker = ActivityTracker()
+
+        with self.assertRaises(ValueError):
+            tracker.start_session(
+                "Safari",
+                "com.apple.Safari",
+                datetime(2026, 4, 29, 8, 0),
+            )
+
+    def test_finish_active_session_raises_value_error_for_naive_ended_at(self):
+        ActivityTracker = self._load_tracker_class()
+        tracker = ActivityTracker()
+        started_at = datetime(2026, 4, 29, 8, 0, tzinfo=timezone.utc)
+
+        tracker.start_session("Safari", "com.apple.Safari", started_at)
+
+        with self.assertRaises(ValueError):
+            tracker.finish_active_session(datetime(2026, 4, 29, 8, 30))
+
+    def test_switch_session_raises_value_error_for_naive_started_at(self):
+        ActivityTracker = self._load_tracker_class()
+        tracker = ActivityTracker()
+        first_started_at = datetime(2026, 4, 29, 8, 0, tzinfo=timezone.utc)
+
+        tracker.start_session("Safari", "com.apple.Safari", first_started_at)
+
+        with self.assertRaises(ValueError):
+            tracker.switch_session(
+                "Notes",
+                "com.apple.Notes",
+                datetime(2026, 4, 29, 8, 45),
+            )
+
+    def test_finish_active_session_clamps_duration_to_zero_when_ended_at_is_earlier(self):
+        ActivityTracker = self._load_tracker_class()
+        tracker = ActivityTracker()
+        started_at = datetime(2026, 4, 29, 8, 30, tzinfo=timezone.utc)
+        ended_at = datetime(2026, 4, 29, 8, 0, tzinfo=timezone.utc)
+
+        tracker.start_session("Safari", "com.apple.Safari", started_at)
+        finished_session = tracker.finish_active_session(ended_at)
+
+        self.assertEqual(finished_session.duration_seconds, 0)
+
+    def test_start_session_replaces_existing_active_session(self):
+        ActivityTracker = self._load_tracker_class()
+        tracker = ActivityTracker()
+        first_started_at = datetime(2026, 4, 29, 8, 0, tzinfo=timezone.utc)
+        second_started_at = datetime(2026, 4, 29, 8, 45, tzinfo=timezone.utc)
+        ended_at = datetime(2026, 4, 29, 9, 0, tzinfo=timezone.utc)
+
+        tracker.start_session("Safari", "com.apple.Safari", first_started_at)
+        tracker.start_session("Notes", "com.apple.Notes", second_started_at)
+        finished_session = tracker.finish_active_session(ended_at)
+
+        self.assertEqual(
+            finished_session,
+            ActivitySession(
+                app_name="Notes",
+                bundle_id="com.apple.Notes",
+                started_at="2026-04-29T08:45:00Z",
+                ended_at="2026-04-29T09:00:00Z",
+                duration_seconds=900,
+            ),
+        )
+
+    def test_finish_active_session_keeps_active_session_when_validation_fails(self):
+        ActivityTracker = self._load_tracker_class()
+        tracker = ActivityTracker()
+        started_at = datetime(2026, 4, 29, 8, 0, tzinfo=timezone.utc)
+        valid_ended_at = datetime(2026, 4, 29, 8, 30, tzinfo=timezone.utc)
+
+        tracker.start_session("Safari", "com.apple.Safari", started_at)
+
+        with self.assertRaises(ValueError):
+            tracker.finish_active_session(datetime(2026, 4, 29, 8, 15))
+
+        self.assertEqual(
+            tracker.finish_active_session(valid_ended_at),
+            ActivitySession(
+                app_name="Safari",
+                bundle_id="com.apple.Safari",
+                started_at="2026-04-29T08:00:00Z",
+                ended_at="2026-04-29T08:30:00Z",
+                duration_seconds=1800,
+            ),
+        )
+    def test_switch_session_keeps_active_session_when_new_started_at_is_invalid(self):
+        ActivityTracker = self._load_tracker_class()
+        tracker = ActivityTracker()
+        first_started_at = datetime(2026, 4, 29, 8, 0, tzinfo=timezone.utc)
+        valid_ended_at = datetime(2026, 4, 29, 8, 30, tzinfo=timezone.utc)
+
+        tracker.start_session("Safari", "com.apple.Safari", first_started_at)
+
+        with self.assertRaises(ValueError):
+            tracker.switch_session(
+                "Notes",
+                "com.apple.Notes",
+                datetime(2026, 4, 29, 8, 15),
+            )
+
+        self.assertEqual(
+            tracker.finish_active_session(valid_ended_at),
+            ActivitySession(
+                app_name="Safari",
+                bundle_id="com.apple.Safari",
+                started_at="2026-04-29T08:00:00Z",
+                ended_at="2026-04-29T08:30:00Z",
+                duration_seconds=1800,
+            ),
+        )
+
+
+class CollectActivityCommandTests(SimpleTestCase):
+    @mock.patch("journal.management.commands.collect_activity.run_collector")
+    def test_collect_activity_command_delegates_to_run_collector(self, mock_run_collector):
+        call_command("collect_activity")
+
+        mock_run_collector.assert_called_once_with()
