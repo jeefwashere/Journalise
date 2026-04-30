@@ -1,0 +1,173 @@
+@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Patrick Hand', cursive;
+  overflow-x: hidden;
+}
+
+/* wrapper */
+.login-wrapper {
+  width: 100%;
+}
+
+/* page */
+.page {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* sky background */
+.page-sky {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(175deg, #4fbdff 0%, #a8dcf8 55%, #d6effc 100%);
+}
+
+/* journal card */
+.journal {
+  position: relative;
+  z-index: 10;
+  width: min(92%, 460px);
+  background: #fffee6;
+  padding: 32px;
+  border-radius: 20px;
+  box-shadow:
+    0 2px 0 #d4c9a8,
+    0 4px 0 #c9bda0,
+    0 6px 0 #bfb396,
+    0 10px 30px rgba(0,0,0,0.18),
+    inset 0 0 60px rgba(255,248,220,0.4);
+}
+
+/* title */
+.title {
+  font-size: 2.6rem;
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+/* form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.form label {
+  font-size: 1.15rem;
+  margin-top: 12px;
+}
+
+.form input {
+  padding: 10px 12px;
+  border: 1.5px solid #c5bfa8;
+  border-radius: 6px;
+  font-size: 1.1rem;
+}
+
+.form input:focus {
+  border-color: #6fb3e0;
+  box-shadow: 0 0 0 3px rgba(111,179,224,0.2);
+  outline: none;
+}
+
+.error {
+  color: #d04040;
+  font-size: 0.95rem;
+  min-height: 14px;
+}
+
+/* buttons */
+.btn {
+  font-size: 1.2rem;
+  cursor: pointer;
+  border-radius: 8px;
+  padding: 11px 16px;
+  margin-top: 18px;
+}
+
+/* login button */
+.btn-login {
+  background: #fff;
+  color: #2d5f8a;
+  border: 2.5px solid #2d5f8a;
+  box-shadow: 3px 3px 0 #2d5f8a;
+}
+
+.btn-login:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 #2d5f8a;
+}
+
+/* google */
+.btn-google {
+  background: #fff;
+  color: #444;
+  border: 2px solid #bbb;
+  box-shadow: 3px 3px 0 #bbb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.google-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* divider */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0 6px;
+  color: #aaa;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #d8d0c0;
+}
+
+/* signup link */
+.login-link {
+  text-align: center;
+  font-size: 0.95rem;
+  color: #888;
+  margin-top: 14px;
+}
+
+.login-link a {
+  color: #4a90c4;
+  text-decoration: none;
+  border-bottom: 1px dashed #4a90c4;
+}
+
+/* back button */
+.back-button {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 9999;
+  padding: 10px 16px;
+  font-size: 1.1rem;
+  background: #fff;
+  color: #2d5f8a;
+  border: 2.5px solid #2d5f8a;
+  border-radius: 8px;
+  box-shadow: 3px 3px 0 #2d5f8a;
+  cursor: pointer;
+}
+
