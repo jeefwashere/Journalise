@@ -1,0 +1,213 @@
+@import url("https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Gaegu:wght@400;700&display=swap");
+
+.landing-page {
+  height: 100vh;
+  background:
+    radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.65), transparent 28%),
+    linear-gradient(180deg, #8ccdd3 0%, #d7dfd7 48%, #f3dfd1 100%);
+  font-family: "Gaegu", "Patrick Hand", cursive;
+  color: #2f2f2f;
+  overflow: hidden;
+}
+
+/* NAVBAR */
+
+.sketch-nav {
+  width: min(1180px, calc(100% - 48px));
+  height: 82px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.brand {
+  color: #2f2f2f;
+  text-decoration: none;
+  font-size: clamp(2.4rem, 5vw, 4rem);
+  font-weight: 700;
+  letter-spacing: 1px;
+  transform: rotate(-2deg);
+  text-shadow: 2px 2px 0 rgba(255, 255, 255, 0.45);
+}
+
+.nav-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+/* HAND-DRAWN BUTTONS */
+
+.sketch-btn {
+  position: relative;
+  display: inline-block;
+  text-decoration: none;
+  color: #2f2f2f;
+  font-weight: 700;
+  border: 3px solid #2f2f2f;
+  box-shadow: 4px 5px 0 rgba(47, 47, 47, 0.85);
+  transition: 0.18s ease;
+}
+
+.sketch-btn::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 2px solid rgba(47, 47, 47, 0.45);
+  border-radius: 58% 42% 51% 49% / 45% 58% 42% 55%;
+  pointer-events: none;
+  transform: rotate(-2deg);
+}
+
+.landing-content {
+  margin: 70px auto 0;
+}
+
+.sketch-btn.small {
+  padding: 8px 21px;
+  font-size: 1.45rem;
+  border-radius: 58% 42% 48% 52% / 45% 55% 45% 55%;
+}
+
+.sketch-btn.big {
+  padding: 12px 34px;
+  font-size: 1.8rem;
+  border-radius: 55% 45% 52% 48% / 47% 58% 42% 53%;
+}
+
+.login-btn {
+  background: #f7eadc;
+}
+
+.signup-btn {
+  background: #b7eadf;
+}
+
+/* FULL OPEN HERO */
+
+.hero {
+  position: relative;
+  height: calc(100vh - 82px);
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px 24px 40px;
+}
+
+.eyebrow {
+  margin: 0 0 20px;
+  padding: 3px 18px;
+  font-size: 1.65rem;
+  font-weight: 700;
+  background: rgba(183, 234, 223, 0.65);
+  border-radius: 55% 45% 50% 50% / 45% 58% 42% 55%;
+  transform: rotate(-2deg);
+}
+
+h1 {
+  margin: 0;
+  max-width: 1100px;
+  font-size: clamp(3rem, 7.2vw, 6.1rem);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.subtitle {
+  width: min(820px, 100%);
+  margin: 28px auto 0;
+  font-size: clamp(1.15rem, 1.8vw, 1.45rem);
+  line-height: 1.55;
+  color: #4b4b4b;
+}
+
+.hero-actions {
+  margin-top: 36px;
+}
+
+/* DOODLES */
+
+.doodle {
+  position: absolute;
+  font-size: clamp(2.2rem, 5vw, 4.5rem);
+  opacity: 0.85;
+  animation: floaty 4.5s ease-in-out infinite;
+  user-select: none;
+}
+
+.cat {
+  top: 19%;
+  left: 10%;
+  transform: rotate(-10deg);
+}
+
+.frog {
+  top: 22%;
+  right: 12%;
+  animation-delay: 0.5s;
+}
+
+.flower {
+  bottom: 18%;
+  left: 16%;
+  animation-delay: 1s;
+}
+
+.paw {
+  bottom: 20%;
+  right: 18%;
+  animation-delay: 1.4s;
+}
+
+@keyframes floaty {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -14px;
+  }
+}
+
+@media (max-width: 700px) {
+  .sketch-nav {
+    width: calc(100% - 30px);
+    align-items: flex-start;
+    gap: 18px;
+  }
+
+  .brand {
+    font-size: 2.4rem;
+  }
+
+  .nav-buttons {
+    gap: 10px;
+  }
+
+  .sketch-btn.small {
+    font-size: 1.15rem;
+    padding: 7px 14px;
+  }
+
+  .hero {
+    justify-content: flex-start;
+    padding-top: 95px;
+  }
+
+  h1 {
+    font-size: clamp(3.4rem, 15vw, 5.4rem);
+  }
+
+  .doodle {
+    opacity: 0.35;
+  }
+}
+
+.no-scroll {
+  height: 100vh;
+  overflow: hidden;
+}
