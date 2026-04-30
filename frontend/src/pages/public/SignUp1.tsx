@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../../api/api";
 import "../../styles/public/signup.css";
-import placeholder from "../../assets/placeholder.jpg";
 
 import pet1Default from "../../assets/Dogs/000.png";
 import pet1Selected from "../../assets/Dogs/002.png";
@@ -9,8 +9,8 @@ import pet1Selected from "../../assets/Dogs/002.png";
 import pet2Default from "../../assets/Cats/100.png";
 import pet2Selected from "../../assets/Cats/102.png";
 
-import pet3Default from "../../assets/placeholder.jpg";
-import pet3Selected from "../../assets/placeholder.jpg";
+import pet3Default from "../../assets/Bunny/200.png";
+import pet3Selected from "../../assets/Bunny/202.png";
 
 import pet4Default from "../../assets/placeholder.jpg";
 import pet4Selected from "../../assets/placeholder.jpg";
@@ -25,15 +25,16 @@ type CloudConfig = {
 type Pet = {
   id: string;
   label: string;
+  petType: string;
   defaultImg: string;
   selectedImg: string;
 };
 
 const PETS: Pet[] = [
-  { id: "pet1", label: "Pet 1", defaultImg: pet1Default, selectedImg: pet1Selected },
-  { id: "pet2", label: "Pet 2", defaultImg: pet2Default, selectedImg: pet2Selected },
-  { id: "pet3", label: "Pet 3", defaultImg: pet3Default, selectedImg: pet3Selected },
-  { id: "pet4", label: "Pet 4", defaultImg: pet4Default, selectedImg: pet4Selected },
+  { id: "pet1", label: "Pet 1", petType: "dog", defaultImg: pet1Default, selectedImg: pet1Selected },
+  { id: "pet2", label: "Pet 2", petType: "cat", defaultImg: pet2Default, selectedImg: pet2Selected },
+  { id: "pet3", label: "Pet 3", petType: "frog", defaultImg: pet3Default, selectedImg: pet3Selected },
+  { id: "pet4", label: "Pet 4", petType: "cat", defaultImg: pet4Default, selectedImg: pet4Selected },
 ];
 
 const Signup: React.FC = () => {
@@ -47,16 +48,18 @@ const Signup: React.FC = () => {
     username: "",
     email: "",
     password: "",
+    form: "",
   });
-
   const [selectedPet, setSelectedPet] = useState<string | null>(null);
   const [petName, setPetName] = useState("");
   const [petNameError, setPetNameError] = useState("");
+  const [signupError, setSignupError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const secondPageRef = useRef<HTMLDivElement>(null);
 
   const validate = () => {
-    const newErrors = { username: "", email: "", password: "" };
+    const newErrors = { username: "", email: "", password: "", form: "" };
     let valid = true;
     if (!username) {
       newErrors.username = "Username is required";
@@ -107,13 +110,60 @@ const Signup: React.FC = () => {
     }
   };
 
-  const handleLetsGo = () => {
+  const handleLetsGo = async () => {
     if (!petName.trim()) {
       setPetNameError("Please give your pet a name!");
       return;
     }
+
     setPetNameError("");
-    console.log("All done!", { username, email, selectedPet, petName });
+    setSignupError("");
+    setLoading(true);
+
+    try {
+      const response = await api.post("auth/register/", {
+        username,
+        email,
+        password,
+      });
+
+      localStorage.setItem("accessToken", response.data.access_token);
+      localStorage.setItem("currentUser", JSON.stringify(response.data.user));
+
+      const chosenPet = PETS.find((pet) => pet.id === selectedPet);
+
+      if (chosenPet) {
+        const petsResponse = await api.get("pets/");
+        const backendPet = petsResponse.data.find(
+          (pet: { id: number; pet_type: string; level: number }) =>
+            pet.pet_type === chosenPet.petType && pet.level === 1
+        );
+
+        if (backendPet) {
+          const userResponse = await api.patch("auth/me/", {
+            profile: {
+              display_name: petName.trim(),
+              current_pet_id: backendPet.id,
+            },
+          });
+
+          localStorage.setItem("currentUser", JSON.stringify(userResponse.data));
+        }
+      }
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      const data = error.response?.data;
+      setSignupError(
+        data?.username?.[0] ||
+          data?.email?.[0] ||
+          data?.password?.[0] ||
+          data?.detail ||
+          "Could not create your account. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   const clouds: CloudConfig[] = [
@@ -264,18 +314,20 @@ const Signup: React.FC = () => {
                 className={`pet-btn ${selectedPet === pet.id ? "pet-btn--selected" : ""}`}
                 onClick={() => {
                   if (selectedPet === pet.id) {
-                    setSelectedPet(null);       // deselect
+                    setSelectedPet(null); // deselect
                     setPetName("");
                     setPetNameError("");
                   } else {
-                    setSelectedPet(pet.id);     // select
+                    setSelectedPet(pet.id); // select
                     setPetName("");
                     setPetNameError("");
                   }
                 }}
               >
                 <img
-                  src={selectedPet === pet.id ? pet.selectedImg : pet.defaultImg}
+                  src={
+                    selectedPet === pet.id ? pet.selectedImg : pet.defaultImg
+                  }
                   alt={pet.label}
                   className="pet-img"
                 />
@@ -297,14 +349,16 @@ const Signup: React.FC = () => {
               />
 
               {petNameError && <span className="error">{petNameError}</span>}
+              {signupError && <span className="error">{signupError}</span>}
 
               <button
                 className="btn btn-letsgo"
-                disabled={!petName.trim()}
+                disabled={!petName.trim() || loading}
                 onClick={handleLetsGo}
               >
-                Next →
+                {loading ? "Creating..." : "Next →"}
               </button>
+              <span className="error">{signupError || errors.form}</span>
             </div>
           )}
         </div>

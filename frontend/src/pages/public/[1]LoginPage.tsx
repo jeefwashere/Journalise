@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../../api/api";
 import "../../styles/public/login.css";
 
 const Login: React.FC = () => {
@@ -10,10 +11,13 @@ const Login: React.FC = () => {
   const [errors, setErrors] = useState({
     username: "",
     password: "",
+    form: "",
   });
+  const [formError, setFormError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const validate = () => {
-    const newErrors = { username: "", password: "" };
+    const newErrors = { username: "", password: "", form: "" };
     let valid = true;
 
     if (!username) {
@@ -30,10 +34,29 @@ const Login: React.FC = () => {
     return valid;
   };
 
-  const handleLogin = () => {
-    if (validate()) {
-      console.log("Logging in...", { username, password });
-      // hook backend here later
+  const handleLogin = async () => {
+    if (!validate()) {
+      return;
+    }
+
+    setLoading(true);
+    setFormError("");
+
+    try {
+      const response = await api.post("auth/login/", {
+        username,
+        password,
+      });
+
+      localStorage.setItem("accessToken", response.data.access_token);
+      localStorage.setItem("currentUser", JSON.stringify(response.data.user));
+      navigate("/dashboard");
+    } catch (error: any) {
+      setFormError(
+        error.response?.data?.detail || "Could not log in. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -45,29 +68,29 @@ const Login: React.FC = () => {
 
       <section className="page page-sky">
         <div className="sky">
-        {[ 
+          {[
             { top: 10, duration: 70, delay: 10, scale: 1.1 },
             { top: 28, duration: 90, delay: 35, scale: 0.85 },
             { top: 50, duration: 60, delay: 55, scale: 1.3 },
             { top: 16, duration: 80, delay: 20, scale: 0.95 },
             { top: 65, duration: 100, delay: 45, scale: 1.0 },
-        ].map((cloud, i) => (
+          ].map((cloud, i) => (
             <div
-            key={i}
-            className="cloud"
-            style={{
+              key={i}
+              className="cloud"
+              style={{
                 top: `${cloud.top}%`,
                 animationDuration: `${cloud.duration}s`,
                 animationDelay: `-${cloud.delay}s`,
                 transform: `scale(${cloud.scale})`,
-            }}
+              }}
             >
-            <div className="cloud-body" />
-            <div className="cloud-bump cloud-bump--sm" />
-            <div className="cloud-bump cloud-bump--lg" />
-            <div className="cloud-bump cloud-bump--md" />
+              <div className="cloud-body" />
+              <div className="cloud-bump cloud-bump--sm" />
+              <div className="cloud-bump cloud-bump--lg" />
+              <div className="cloud-bump cloud-bump--md" />
             </div>
-        ))}
+          ))}
         </div>
 
         <div className="journal">
@@ -94,10 +117,12 @@ const Login: React.FC = () => {
                 onChange={(e) => setPassword(e.target.value)}
               />
               <span className="error">{errors.password}</span>
+              <span className="error">{formError}</span>
 
-              <button className="btn btn-login" onClick={handleLogin}>
-                Log In
+              <button className="btn btn-login" onClick={handleLogin} disabled={loading}>
+                {loading ? "Logging in..." : "Log In"}
               </button>
+              <span className="error">{errors.form}</span>
 
               <div className="divider">
                 <span>or</span>
