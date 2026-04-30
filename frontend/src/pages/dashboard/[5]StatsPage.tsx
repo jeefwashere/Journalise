@@ -42,6 +42,24 @@ const flowerMap: Record<string, string> = {
   other: flowerOther,
 };
 
+const categoryColors: Record<string, string> = {
+  study: "#9ee3d8",
+  work: "#d8c5f2",
+  break: "#ffe29a",
+  entertainment: "#ffe29a",
+  communication: "#ffaaa0",
+  other: "#aeddf2",
+};
+
+const fallbackPieColors = [
+  "#9ee3d8",
+  "#ffe29a",
+  "#d8c5f2",
+  "#ffaaa0",
+  "#aeddf2",
+  "#b7eadf",
+];
+
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -57,6 +75,7 @@ export default function StatsPage() {
   const [stats, setStats] = useState<ApiStat[]>([]);
   const [date, setDate] = useState(todayISO());
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const [selectedHour, setSelectedHour] = useState<HourPoint | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [flowerModal, setFlowerModal] = useState(false);
@@ -65,6 +84,7 @@ export default function StatsPage() {
   useEffect(() => {
     async function loadStats() {
       setLoading(true);
+      setError("");
 
       try {
         const token = getToken();
@@ -84,31 +104,8 @@ export default function StatsPage() {
         setStats(data);
       } catch (error) {
         console.error(error);
-
-        setStats([
-          {
-            category: "study",
-            category_display: "Study",
-            total_minutes: 45,
-            time_range: "01:00 PM - 02:00 PM",
-            start_time: "2026-04-29T13:00:00-04:00",
-            end_time: "2026-04-29T14:00:00-04:00",
-            activity_count: 2,
-            titles: ["Reading Django docs", "Working on serializers"],
-            notes: ["Reviewed DRF serializer structure"],
-          },
-          {
-            category: "work",
-            category_display: "Work",
-            total_minutes: 30,
-            time_range: "02:00 PM - 03:00 PM",
-            start_time: "2026-04-29T14:00:00-04:00",
-            end_time: "2026-04-29T15:00:00-04:00",
-            activity_count: 1,
-            titles: ["Fixed stats endpoint"],
-            notes: [],
-          },
-        ]);
+        setStats([]);
+        setError("Could not load stats from the backend.");
       } finally {
         setLoading(false);
       }
@@ -176,10 +173,14 @@ export default function StatsPage() {
 
   const breakdown = useMemo(() => {
     const totals = new Map<string, { label: string; minutes: number }>();
-    const totalMinutes =
-      stats.reduce((sum, item) => sum + item.total_minutes, 0) || 1;
+    const totalMinutes = stats.reduce(
+      (sum, item) => sum + Math.max(0, item.total_minutes),
+      0,
+    );
 
     stats.forEach((item) => {
+      if (item.total_minutes <= 0) return;
+
       const existing = totals.get(item.category);
       totals.set(item.category, {
         label: item.category_display,
@@ -191,9 +192,46 @@ export default function StatsPage() {
       category,
       label: value.label,
       minutes: value.minutes,
-      percent: Math.round((value.minutes / totalMinutes) * 100),
+      percent:
+        totalMinutes > 0
+          ? Math.round((value.minutes / totalMinutes) * 100)
+          : 0,
     }));
   }, [stats]);
+
+  const coloredBreakdown = useMemo(
+    () =>
+      breakdown.map((item, index) => ({
+        ...item,
+        color:
+          categoryColors[item.category] ||
+          fallbackPieColors[index % fallbackPieColors.length],
+      })),
+    [breakdown],
+  );
+
+  const pieBackground = useMemo(() => {
+    const totalMinutes = coloredBreakdown.reduce(
+      (sum, item) => sum + item.minutes,
+      0,
+    );
+
+    if (totalMinutes <= 0) {
+      return "#fff8eb";
+    }
+
+    let cursor = 0;
+    const segments = coloredBreakdown.map((item, index) => {
+      const start = cursor;
+      const size = (item.minutes / totalMinutes) * 100;
+      const end = index === coloredBreakdown.length - 1 ? 100 : cursor + size;
+      cursor = end;
+
+      return `${item.color} ${start.toFixed(2)}% ${end.toFixed(2)}%`;
+    });
+
+    return `conic-gradient(${segments.join(", ")})`;
+  }, [coloredBreakdown]);
 
   const topHours = [...hourlyPoints]
     .sort((a, b) => b.percent - a.percent)
@@ -260,6 +298,7 @@ export default function StatsPage() {
           </div>
 
           {loading && <p className="loading-text">Loading your day...</p>}
+          {error && <p className="loading-text">{error}</p>}
 
           <div className="line-chart-wrap">
             <div className="y-labels">
@@ -336,19 +375,32 @@ export default function StatsPage() {
           </div>
 
           <div className="breakdown-area">
-            <div className="pie-chart">
-              <div className="pie-center">Today</div>
+            <div
+              className={`pie-chart ${coloredBreakdown.length === 0 ? "empty" : ""}`}
+              style={
+                coloredBreakdown.length > 0
+                  ? { background: pieBackground }
+                  : undefined
+              }
+            >
+              <div className="pie-center">
+                {coloredBreakdown.length === 0 ? "No data" : "Today"}
+              </div>
             </div>
 
             <div className="legend">
-              {breakdown.map((item) => (
+              {coloredBreakdown.length === 0 && (
+                <p className="empty-breakdown">No activity for this date yet.</p>
+              )}
+
+              {coloredBreakdown.map((item) => (
                 <motion.button
                   key={item.category}
                   whileHover={{ x: 5 }}
                   onClick={() => setSelectedCategory(item.category)}
                   className={selectedCategory === item.category ? "active" : ""}
                 >
-                  <span />
+                  <span style={{ background: item.color }} />
                   {item.label}
                   <strong>{item.percent}%</strong>
                 </motion.button>

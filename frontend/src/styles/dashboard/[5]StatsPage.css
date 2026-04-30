@@ -317,13 +317,15 @@
   overflow: hidden;
   border: 4px solid #222;
   border-radius: 50%;
-  background: conic-gradient(
-    #9ee3d8 0 40%,
-    #ffe29a 40% 65%,
-    #d8c5f2 65% 85%,
-    #ffaaa0 85% 95%,
-    #aeddf2 95% 100%
-  );
+  background: #fff8eb;
+}
+
+.pie-chart.empty {
+  background:
+    repeating-conic-gradient(
+      rgba(34, 34, 34, 0.08) 0 8deg,
+      rgba(255, 248, 235, 0.95) 8deg 18deg
+    );
 }
 
 .pie-center {
@@ -371,9 +373,13 @@
 .legend span {
   width: 20px;
   height: 20px;
-  background: #9ee3d8;
   border: 3px solid #222;
   border-radius: 7px;
+}
+
+.empty-breakdown {
+  margin: 0;
+  font-size: 1.15rem;
 }
 
 /* GARDEN */
