@@ -5,9 +5,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 from unittest import mock
 
+from django.contrib.auth import get_user_model
 from django.core.management import call_command
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
 from journal.activity_types import ActivitySession
+from journal.models import Activity
+from rest_framework import status
+
+User = get_user_model()
 
 
 class ActivitySessionTests(SimpleTestCase):
@@ -382,6 +388,108 @@ class ActivityTrackerTests(SimpleTestCase):
                 duration_seconds=1800,
             ),
         )
+
+
+class ActivityIngestTests(TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.base_dir = Path(self.temp_dir.name)
+        self.user = User.objects.create_user(username="tracker", password="secret-pass")
+
+    def test_persist_session_creates_activity_and_local_log(self):
+        from journal.activity_ingest import persist_session
+
+        session = ActivitySession(
+            app_name="Visual Studio Code",
+            bundle_id="com.microsoft.VSCode",
+            started_at="2026-04-29T08:00:00Z",
+            ended_at="2026-04-29T08:30:00Z",
+            duration_seconds=1800,
+        )
+
+        activity, created = persist_session(
+            self.user,
+            session,
+            base_dir=self.base_dir,
+        )
+
+        self.assertTrue(created)
+        self.assertEqual(activity.user, self.user)
+        self.assertEqual(activity.title, "Visual Studio Code")
+        self.assertEqual(activity.category, Activity.Category.WORK)
+        self.assertIn("com.microsoft.VSCode", activity.description)
+
+        day_path = self.base_dir / "activity_logs" / "2026-04-29.json"
+        self.assertEqual(
+            json.loads(day_path.read_text(encoding="utf-8")),
+            [session.to_dict()],
+        )
+
+    def test_persist_session_is_idempotent_for_existing_activity(self):
+        from journal.activity_ingest import persist_session
+
+        session = ActivitySession(
+            app_name="Safari",
+            bundle_id="com.apple.Safari",
+            started_at="2026-04-29T08:00:00Z",
+            ended_at="2026-04-29T08:30:00Z",
+            duration_seconds=1800,
+        )
+
+        persist_session(self.user, session, base_dir=self.base_dir)
+        activity, created = persist_session(self.user, session, base_dir=self.base_dir)
+
+        self.assertFalse(created)
+        self.assertEqual(Activity.objects.filter(pk=activity.pk).count(), 1)
+
+
+class ActivityTrackingViewTests(TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp_dir.cleanup)
+        self.user = User.objects.create_user(
+            username="api-tracker",
+            password="secret-pass",
+        )
+        self.client.force_login(self.user)
+
+    def test_tracking_endpoint_persists_session_as_activity(self):
+        payload = {
+            "enabled": True,
+            "sessions": [
+                {
+                    "app_name": "Zoom",
+                    "bundle_id": "us.zoom.xos",
+                    "started_at": "2026-04-29T09:00:00Z",
+                    "ended_at": "2026-04-29T09:15:00Z",
+                    "duration_seconds": 900,
+                }
+            ],
+        }
+
+        with self.settings(BASE_DIR=Path(self.temp_dir.name)):
+            response = self.client.post(
+                reverse("activity-tracking"),
+                data=payload,
+                content_type="application/json",
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["created"], 1)
+
+        activity = Activity.objects.get(user=self.user)
+        self.assertEqual(activity.title, "Zoom")
+        self.assertEqual(activity.category, Activity.Category.COMMUNICATION)
+
+    def test_tracking_endpoint_rejects_invalid_sessions_shape(self):
+        response = self.client.post(
+            reverse("activity-tracking"),
+            data={"sessions": {"app_name": "Safari"}},
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
 class CollectActivityCommandTests(SimpleTestCase):
