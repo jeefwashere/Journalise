@@ -3,6 +3,18 @@ import { useNavigate } from "react-router-dom";
 import "../../styles/public/signup.css";
 import placeholder from "../../assets/placeholder.jpg";
 
+import pet1Default from "../../assets/Dogs/000.png";
+import pet1Selected from "../../assets/Dogs/002.png";
+
+import pet2Default from "../../assets/Cats/100.png";
+import pet2Selected from "../../assets/Cats/102.png";
+
+import pet3Default from "../../assets/placeholder.jpg";
+import pet3Selected from "../../assets/placeholder.jpg";
+
+import pet4Default from "../../assets/placeholder.jpg";
+import pet4Selected from "../../assets/placeholder.jpg";
+
 type CloudConfig = {
   top: number;
   duration: number;
@@ -13,14 +25,15 @@ type CloudConfig = {
 type Pet = {
   id: string;
   label: string;
-  image?: string;
+  defaultImg: string;
+  selectedImg: string;
 };
 
 const PETS: Pet[] = [
-  { id: "pet1", label: "Pet 1" },
-  { id: "pet2", label: "Pet 2" },
-  { id: "pet3", label: "Pet 3" },
-  { id: "pet4", label: "Pet 4" },
+  { id: "pet1", label: "Pet 1", defaultImg: pet1Default, selectedImg: pet1Selected },
+  { id: "pet2", label: "Pet 2", defaultImg: pet2Default, selectedImg: pet2Selected },
+  { id: "pet3", label: "Pet 3", defaultImg: pet3Default, selectedImg: pet3Selected },
+  { id: "pet4", label: "Pet 4", defaultImg: pet4Default, selectedImg: pet4Selected },
 ];
 
 const Signup: React.FC = () => {
@@ -250,12 +263,22 @@ const Signup: React.FC = () => {
                 key={pet.id}
                 className={`pet-btn ${selectedPet === pet.id ? "pet-btn--selected" : ""}`}
                 onClick={() => {
-                  setSelectedPet(pet.id);
-                  setPetName("");
-                  setPetNameError("");
+                  if (selectedPet === pet.id) {
+                    setSelectedPet(null);       // deselect
+                    setPetName("");
+                    setPetNameError("");
+                  } else {
+                    setSelectedPet(pet.id);     // select
+                    setPetName("");
+                    setPetNameError("");
+                  }
                 }}
               >
-                <img src={placeholder} alt={pet.label} className="pet-img" />
+                <img
+                  src={selectedPet === pet.id ? pet.selectedImg : pet.defaultImg}
+                  alt={pet.label}
+                  className="pet-img"
+                />
               </button>
             ))}
           </div>
