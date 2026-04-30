@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../../styles/dashboard/AccountPage.css";
-import {
-  getPetImage,
-  getProfilePetLabel,
-  getProfilePetName,
-  petTypeToIndex,
-  profilePetLevel,
-} from "../../utils/petDisplay";
+import { useUserPet } from "../../hooks/useUserPet";
+import { getPetImage } from "../../utils/petDisplay";
 
 type AccountPet = {
   pet_type?: string;
@@ -33,9 +28,6 @@ type AccountUser = {
 type SavedHomeState = {
   username?: string;
   email?: string;
-  petName?: string;
-  petType?: number;
-  petLevel?: number;
 };
 
 const API_BASE_URL = "";
@@ -45,10 +37,6 @@ function getToken() {
   return (
     localStorage.getItem("accessToken") || localStorage.getItem("token") || ""
   );
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
 }
 
 function loadSavedHomeState(): SavedHomeState {
@@ -62,6 +50,7 @@ function loadSavedHomeState(): SavedHomeState {
 
 export default function AccountPage() {
   const navigate = useNavigate();
+  const userPet = useUserPet();
   const savedHomeState = useMemo(loadSavedHomeState, []);
   const [user, setUser] = useState<AccountUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -106,19 +95,6 @@ export default function AccountPage() {
     navigate("/login");
   };
 
-  const apiPet = user?.profile?.current_pet;
-  const savedPetType = clamp(Number(savedHomeState.petType ?? 0), 0, 3);
-  const petType = apiPet ? petTypeToIndex(apiPet.pet_type) : savedPetType;
-  const savedLevel = Number(savedHomeState.petLevel ?? 1);
-  const displayLevel = user?.profile
-    ? profilePetLevel(user.profile)
-    : clamp(Number.isFinite(savedLevel) ? savedLevel : 1, 1, 3);
-  const petName = user?.profile
-    ? getProfilePetName(user.profile)
-    : savedHomeState.petName || "Your pet";
-  const petLabel = user?.profile
-    ? getProfilePetLabel(user.profile)
-    : ["Dog", "Cat", "Bunny"][petType] || "Pet";
   const displayName =
     user?.profile?.display_name ||
     user?.username ||
@@ -170,14 +146,14 @@ export default function AccountPage() {
         <div className="account-panel account-pet-panel">
           <div className="account-pet-copy">
             <p className="account-kicker">Current Pet</p>
-            <h2>{petName}</h2>
-            <p>{petLabel}</p>
-            <strong>Level {displayLevel}</strong>
+            <h2>{userPet.petName}</h2>
+            <p>{userPet.petLabel}</p>
+            <strong>Level {userPet.displayLevel}</strong>
           </div>
 
           <img
-            src={getPetImage(petType, displayLevel)}
-            alt={`${petName}, ${petLabel}`}
+            src={getPetImage(userPet.petTypeIndex, userPet.assetLevel, 0)}
+            alt={`${userPet.petName}, ${userPet.petLabel}`}
             className="account-pet"
           />
         </div>

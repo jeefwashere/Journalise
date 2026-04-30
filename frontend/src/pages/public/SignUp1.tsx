@@ -29,6 +29,11 @@ type Pet = {
   selectedImg: string;
 };
 
+type SignupUser = {
+  username?: string;
+  email?: string;
+};
+
 const PETS: Pet[] = [
   { id: "pet1", label: "Dog", petType: "dog", petTypeIndex: 0, defaultImg: pet1Default, selectedImg: pet1Selected },
   { id: "pet2", label: "Cat", petType: "cat", petTypeIndex: 1, defaultImg: pet2Default, selectedImg: pet2Selected },
@@ -53,8 +58,10 @@ const Signup: React.FC = () => {
   const [petName, setPetName] = useState("");
   const [petNameError, setPetNameError] = useState("");
   const [signupError, setSignupError] = useState("");
+  const [petSetupError, setPetSetupError] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleSignupUser, setGoogleSignupUser] = useState<SignupUser | null>(null);
 
   const secondPageRef = useRef<HTMLDivElement>(null);
 
@@ -78,6 +85,7 @@ const Signup: React.FC = () => {
       valid = false;
     }
     setErrors(newErrors);
+    setSignupError("");
     return valid;
   };
 
@@ -106,6 +114,7 @@ const Signup: React.FC = () => {
 
   const handleSignup = () => {
     if (validate()) {
+      setGoogleSignupUser(null);
       setCanScroll(true);
 
       const targetY = secondPageRef.current?.offsetTop || 0;
@@ -121,62 +130,93 @@ const Signup: React.FC = () => {
     }
 
     setPetNameError("");
+    setPetSetupError("");
     setSignupError("");
     setLoading(true);
 
     try {
-      const response = await api.post("auth/register/", {
-        username,
-        email,
-        password,
-      });
-
-      localStorage.setItem("accessToken", response.data.access_token);
-      localStorage.setItem("currentUser", JSON.stringify(response.data.user));
-
       const chosenPet = PETS.find((pet) => pet.id === selectedPet);
 
-      if (chosenPet) {
-        const petsResponse = await api.get("pets/");
-        const backendPet = petsResponse.data.find(
-          (pet: { id: number; pet_type: string; level: number; mood?: string }) =>
-            pet.pet_type === chosenPet.petType &&
-            pet.level === 1 &&
-            (pet.mood || "neutral") === "neutral"
-        );
-
-        if (backendPet) {
-          const userResponse = await api.patch("auth/me/", {
-            profile: {
-              pet_name: petName.trim(),
-              current_pet_id: backendPet.id,
-            },
-          });
-
-          localStorage.setItem("currentUser", JSON.stringify(userResponse.data));
-          localStorage.setItem(
-            HOME_STATE_KEY,
-            JSON.stringify({
-              username,
-              email,
-              petName: petName.trim(),
-              petType: chosenPet.petTypeIndex,
-              petLevel: Number(backendPet.level || 1),
-            }),
-          );
-        }
+      if (!chosenPet) {
+        setPetNameError("Please pick a pet!");
+        return;
       }
+
+      let activeUser = googleSignupUser;
+
+      if (!activeUser) {
+        const response = await api.post("auth/register/", {
+          username,
+          email,
+          password,
+        });
+
+        activeUser = response.data.user;
+        localStorage.setItem("accessToken", response.data.access_token);
+        localStorage.setItem("currentUser", JSON.stringify(response.data.user));
+      }
+
+      const petsResponse = await api.get("pets/");
+      const backendPet = petsResponse.data.find(
+        (pet: { id: number; pet_type: string; level: number; mood?: string }) =>
+          pet.pet_type === chosenPet.petType &&
+          pet.level === 1 &&
+          (pet.mood || "neutral") === "neutral"
+      );
+
+      if (!backendPet) {
+        throw new Error("Could not find the selected pet. Please try again.");
+      }
+
+      const userResponse = await api.patch("auth/me/", {
+        profile: {
+          pet_name: petName.trim(),
+          current_pet_id: backendPet.id,
+        },
+      });
+      const updatedUser = userResponse.data;
+
+      localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+      localStorage.setItem(
+        HOME_STATE_KEY,
+        JSON.stringify({
+          username: updatedUser.username || activeUser?.username || username,
+          email: updatedUser.email || activeUser?.email || email,
+          petName: petName.trim(),
+          petType: chosenPet.petTypeIndex,
+          petLevel: Number(backendPet.level || 1),
+        }),
+      );
 
       navigate("/dashboard");
     } catch (error: any) {
       const data = error.response?.data;
-      setSignupError(
-        data?.username?.[0] ||
-          data?.email?.[0] ||
-          data?.password?.[0] ||
+      const accountErrors = {
+        username: data?.username?.[0] || "",
+        email: data?.email?.[0] || "",
+        password: data?.password?.[0] || "",
+        form: data?.detail || "",
+      };
+      const hasAccountError =
+        accountErrors.username ||
+        accountErrors.email ||
+        accountErrors.password ||
+        accountErrors.form;
+
+      if (hasAccountError && !googleSignupUser) {
+        setErrors(accountErrors);
+        setSignupError(
+          accountErrors.form ||
+            "Please fix the highlighted signup fields and try again."
+        );
+        smoothScrollTo(0, 800);
+      } else {
+        setPetSetupError(
           data?.detail ||
-          "Could not create your account. Please try again."
-      );
+            error.message ||
+            "Could not save your pet. Please try again."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -185,11 +225,28 @@ const Signup: React.FC = () => {
   const handleGoogleSignup = async () => {
     setGoogleLoading(true);
     setSignupError("");
-    setErrors((currentErrors) => ({ ...currentErrors, form: "" }));
+    setPetSetupError("");
+    setErrors({ username: "", email: "", password: "", form: "" });
 
     try {
-      await loginWithGoogle();
-      navigate("/dashboard");
+      const response = await loginWithGoogle();
+      const user = response.user || null;
+
+      setGoogleSignupUser(user);
+      setCanScroll(true);
+
+      if (user?.username) {
+        setUsername(user.username);
+      }
+
+      if (user?.email) {
+        setEmail(user.email);
+      }
+
+      requestAnimationFrame(() => {
+        const targetY = secondPageRef.current?.offsetTop || 0;
+        smoothScrollTo(targetY, 2000);
+      });
     } catch (error: any) {
       setSignupError(
         error.response?.data?.detail ||
@@ -358,10 +415,12 @@ const Signup: React.FC = () => {
                     setSelectedPet(null); // deselect
                     setPetName("");
                     setPetNameError("");
+                    setPetSetupError("");
                   } else {
                     setSelectedPet(pet.id); // select
                     setPetName("");
                     setPetNameError("");
+                    setPetSetupError("");
                   }
                 }}
               >
@@ -390,7 +449,7 @@ const Signup: React.FC = () => {
               />
 
               {petNameError && <span className="error">{petNameError}</span>}
-              {signupError && <span className="error">{signupError}</span>}
+              {petSetupError && <span className="error">{petSetupError}</span>}
 
               <button
                 className="btn btn-letsgo"
@@ -399,7 +458,6 @@ const Signup: React.FC = () => {
               >
                 {loading ? "Creating..." : "Next →"}
               </button>
-              <span className="error">{signupError || errors.form}</span>
             </div>
           )}
         </div>

@@ -4,8 +4,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import api from "../../api/api";
 import "../../styles/dashboard/[6]JournalHistoryPage.css";
 
-import dogPet from "../../assets/Dogs/005.png";
-
 type CategoryType = string;
 
 interface ApiStat {
@@ -318,16 +316,6 @@ export default function JournalHistoryPage() {
           ))}
         </aside>
 
-        <motion.div
-          className="pet"
-          whileHover={{ y: -6 }}
-        >
-          <div className="speech">
-            You did great today!
-          </div>
-
-          <img src={dogPet} alt="pet" />
-        </motion.div>
       </main>
     </motion.div>
   );
