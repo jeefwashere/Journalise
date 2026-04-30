@@ -16,7 +16,9 @@ class ActivityTracker:
     def __init__(self):
         self._active_session: dict[str, str | datetime] | None = None
 
-    def start_session(self, app_name: str, bundle_id: str, started_at: datetime) -> None:
+    def start_session(
+        self, app_name: str, bundle_id: str, started_at: datetime
+    ) -> None:
         _require_aware_datetime(started_at)
         self._active_session = {
             "app_name": app_name,

@@ -47,7 +47,7 @@ function App() {
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <StatsPage />
+              <MainPage />
             </ProtectedRoute>
           }
         />

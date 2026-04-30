@@ -4,11 +4,13 @@ import "../styles/components/TrackingToggle.css";
 interface TrackingToggleProps {
   isTracking: boolean;
   onToggle: (value: boolean) => void;
+  disabled?: boolean;
 }
 
 const TrackingToggle: React.FC<TrackingToggleProps> = ({
   isTracking,
   onToggle,
+  disabled = false,
 }) => {
   return (
     <div className="tracking-toggle-wrapper">
@@ -21,6 +23,7 @@ const TrackingToggle: React.FC<TrackingToggleProps> = ({
           id="tracking-toggle"
           className="toggle-checkbox"
           checked={isTracking}
+          disabled={disabled}
           onChange={(e) => onToggle(e.target.checked)}
         />
         <label htmlFor="tracking-toggle" className="toggle-label">

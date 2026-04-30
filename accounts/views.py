@@ -138,7 +138,6 @@ def auth_response(user, access_token, status_code=status.HTTP_200_OK):
         {
             "access_token": access_token,
             "token_type": "Bearer",
-            "access_token": access_token,
             "expires_in": settings.JOURNALISE_ACCESS_TOKEN_SECONDS,
             "user": UserSerializer(user).data,
         },

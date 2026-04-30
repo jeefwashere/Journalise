@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 
 from accounts.authentication import BearerTokenAuthentication
 from journal.activity_ingest import persist_sessions
+from journal.tracking_runtime import start_tracking, stop_tracking
 
 
 class CreateActivityList(generics.ListCreateAPIView):
@@ -45,6 +46,16 @@ class ActivityTrackingView(APIView):
         sessions = request.data.get("sessions")
         if sessions is None and "session" in request.data:
             sessions = [request.data["session"]]
+
+        if sessions is None and "enabled" in request.data:
+            if bool(request.data["enabled"]):
+                return Response(start_tracking(request.user), status=status.HTTP_200_OK)
+
+            result = stop_tracking(request.user)
+            activity = result.pop("activity")
+            if activity is not None:
+                result["activity_id"] = activity.pk
+            return Response(result, status=status.HTTP_200_OK)
 
         if sessions is None:
             sessions = []

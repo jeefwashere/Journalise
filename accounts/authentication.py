@@ -11,21 +11,23 @@ class BearerTokenAuthentication(authentication.BaseAuthentication):
     def authenticate(self, request):
         auth = authentication.get_authorization_header(request).split()
         if not auth:
-            return None
+            token = request.COOKIES.get("access_token")
+            if not token:
+                return None
+        else:
+            if auth[0].lower() != self.keyword.lower().encode():
+                return None
 
-        if auth[0].lower() != self.keyword.lower().encode():
-            return None
+            if len(auth) == 1:
+                raise exceptions.AuthenticationFailed("No token provided.")
 
-        if len(auth) == 1:
-            raise exceptions.AuthenticationFailed("No token provided.")
+            if len(auth) > 2:
+                raise exceptions.AuthenticationFailed("Invalid token header.")
 
-        if len(auth) > 2:
-            raise exceptions.AuthenticationFailed("Invalid token header.")
-
-        try:
-            token = auth[1].decode()
-        except UnicodeError as exc:
-            raise exceptions.AuthenticationFailed("Invalid token header.") from exc
+            try:
+                token = auth[1].decode()
+            except UnicodeError as exc:
+                raise exceptions.AuthenticationFailed("Invalid token header.") from exc
 
         try:
             payload = decode_access_token(token)

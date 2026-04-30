@@ -57,9 +57,13 @@ function todayISO() {
 }
 
 function getToken() {
-  return (
-    localStorage.getItem("accessToken") || localStorage.getItem("token") || ""
-  );
+  const token = localStorage.getItem("accessToken") || localStorage.getItem("token");
+
+  if (!token || token === "undefined" || token === "null") {
+    return "";
+  }
+
+  return token;
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -138,6 +142,7 @@ export default function MainPage() {
   const [petType, setPetType] = useState(savedPet.petType);
   const [petLevel, setPetLevel] = useState(savedPet.petLevel);
   const [isTracking, setIsTracking] = useState(false);
+  const [isTrackingPending, setIsTrackingPending] = useState(false);
   const [activePetState, setActivePetState] = useState<number | null>(null);
   const [earnedFlowerTypes, setEarnedFlowerTypes] = useState<number[]>([]);
 
@@ -246,6 +251,36 @@ export default function MainPage() {
     }, 2000);
   };
 
+  const handleTrackingToggle = async (enabled: boolean) => {
+    const previousTracking = isTracking;
+    setIsTracking(enabled);
+    setIsTrackingPending(true);
+
+    try {
+      const token = getToken();
+      const response = await fetch(`${API_BASE_URL}/api/journal/tracking/`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ enabled }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Tracking request failed");
+      }
+
+      const result = await response.json();
+      setIsTracking(Boolean(result.tracking));
+    } catch {
+      setIsTracking(previousTracking);
+    } finally {
+      setIsTrackingPending(false);
+    }
+  };
+
   const handleLogout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("token");
@@ -330,7 +365,11 @@ export default function MainPage() {
       </button>
 
       <div className="home-tracking">
-        <TrackingToggle isTracking={isTracking} onToggle={setIsTracking} />
+        <TrackingToggle
+          isTracking={isTracking}
+          onToggle={handleTrackingToggle}
+          disabled={isTrackingPending}
+        />
       </div>
     </main>
   );

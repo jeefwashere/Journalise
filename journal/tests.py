@@ -491,6 +491,40 @@ class ActivityTrackingViewTests(TestCase):
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    @mock.patch("journal.tracking_runtime.generate_daily_summary")
+    def test_tracking_endpoint_starts_and_stops_runtime_tracker(self, mock_summary):
+        mock_summary.return_value = {
+            "date": "2026-04-29",
+            "stats": {},
+            "accomplishments": [],
+            "journal": "Tracked activity.",
+            "productivity_score": 0,
+            "source": "fallback",
+        }
+
+        with self.settings(BASE_DIR=Path(self.temp_dir.name)):
+            start_response = self.client.post(
+                reverse("activity-tracking"),
+                data={"enabled": True},
+                content_type="application/json",
+            )
+            stop_response = self.client.post(
+                reverse("activity-tracking"),
+                data={"enabled": False},
+                content_type="application/json",
+            )
+
+        self.assertEqual(start_response.status_code, status.HTTP_200_OK)
+        self.assertTrue(start_response.json()["tracking"])
+        self.assertEqual(stop_response.status_code, status.HTTP_200_OK)
+        self.assertFalse(stop_response.json()["tracking"])
+        self.assertEqual(Activity.objects.filter(user=self.user).count(), 1)
+        self.assertEqual(
+            Activity.objects.get(user=self.user).title,
+            "Journalise local tracker",
+        )
+        mock_summary.assert_called_once()
+
 
 class CollectActivityCommandTests(SimpleTestCase):
     @mock.patch("journal.management.commands.collect_activity.run_collector")
