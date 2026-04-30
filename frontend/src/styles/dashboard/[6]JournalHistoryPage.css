@@ -218,15 +218,17 @@ body {
 
 .timeline {
   position: fixed;
+  top: 0;
   right: 26px;
-  top: 150px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  width: 84px;
   z-index: 10;
 }
 
 .timeline button {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  transform: translateY(-50%);
   border: 3px solid #222;
   background: #fff1bf;
   padding: 12px 14px;
@@ -238,7 +240,7 @@ body {
 }
 
 .timeline button:hover {
-  transform: translateY(-2px);
+  transform: translateY(calc(-50% - 2px));
   background: #ffe89b;
 }
 

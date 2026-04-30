@@ -406,7 +406,6 @@ export default function StatsPage() {
             className="teacher-pet"
             whileHover={{ y: -8, rotate: 2 }}
           >
-            <div className="speech">Great day!</div>
             <img
               src={getPetImage(userPet.petTypeIndex, userPet.assetLevel, 5)}
               alt={`${userPet.petName}, ${userPet.petLabel}`}
