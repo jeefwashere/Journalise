@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import "../../styles/dashboard/[5]StatsPage.css";
 
@@ -32,7 +32,7 @@ interface HourPoint {
   raw: ApiStat[];
 }
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "/api";
 
 const flowerMap: Record<string, string> = {
   study: flowerStudy,
@@ -53,10 +53,10 @@ function getToken() {
 }
 
 export default function StatsPage() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<ApiStat[]>([]);
   const [date, setDate] = useState(todayISO());
   const [loading, setLoading] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [selectedHour, setSelectedHour] = useState<HourPoint | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [flowerModal, setFlowerModal] = useState(false);
@@ -179,6 +179,14 @@ export default function StatsPage() {
     })
     .join(" ");
 
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("token");
+    localStorage.removeItem("journaliseIsAuthenticated");
+    localStorage.removeItem("journaliseHomeState");
+    navigate("/login");
+  };
+
   return (
     <motion.div
       className="stats-page"
@@ -186,35 +194,17 @@ export default function StatsPage() {
       animate={{ opacity: 1, y: 0 }}
     >
       <nav className="stats-nav">
-        <Link to="/dashboard" className="stats-logo">
+        <Link to="/home" className="stats-logo">
           Journalise
         </Link>
 
-        <div className="stats-nav-icons">
-          <Link to="/dashboard" className="icon-btn">
-            ⌂
-          </Link>
-          <button className="icon-btn" onClick={() => setMenuOpen(!menuOpen)}>
-            ☰
+        <div className="stats-nav-links">
+          <Link to="/stats">Stats</Link>
+          <Link to="/journal">Journal</Link>
+          <Link to="/account">My Account</Link>
+          <button type="button" onClick={handleLogout}>
+            Log Out
           </button>
-
-          <AnimatePresence>
-            {menuOpen && (
-              <motion.div
-                className="menu-dropdown"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                <Link to="/stats">My Stats</Link>
-                <Link to="/account">My Account</Link>
-                <Link to="/journal">Journal History</Link>
-                <Link to="/pet-room">Pet Room</Link>
-                <Link to="/settings">Settings</Link>
-                <Link to="/logout">Logout</Link>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </nav>
 
@@ -361,7 +351,6 @@ export default function StatsPage() {
           <motion.div
             className="teacher-pet"
             whileHover={{ y: -8, rotate: 2 }}
-            onClick={() => (window.location.href = "/pet-room")}
           >
             <div className="speech">Great day!</div>
             <img src={dogPet} alt="Teacher pet dog" />
@@ -428,7 +417,7 @@ export default function StatsPage() {
                 className="close-btn"
                 onClick={() => setFlowerModal(false)}
               >
-                ×
+            
               </button>
               <h2>Reward Garden</h2>
               <p>

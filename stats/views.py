@@ -119,8 +119,8 @@ class ActivityStatsView(APIView):
                 "start_time": bucket["start_time"],
                 "end_time": bucket["end_time"],
                 "activity_count": len(bucket["activity_ids"]),
-                "titles": list(bucket["titles"]),
-                "notes": list(bucket["notes"]),
+                "titles": sorted(bucket["titles"], reverse=True),
+                "notes": sorted(bucket["notes"], reverse=True),
             }
             for bucket in sorted(
                 buckets.values(),

@@ -46,7 +46,12 @@
   font-weight: 700;
   border: 3px solid #2f2f2f;
   box-shadow: 4px 5px 0 rgba(47, 47, 47, 0.85);
-  transition: 0.18s ease;
+  transform: rotate(-1deg);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+  animation: buttonBob 3.2s ease-in-out infinite;
 }
 
 .sketch-btn::before {
@@ -57,6 +62,24 @@
   border-radius: 58% 42% 51% 49% / 45% 58% 42% 55%;
   pointer-events: none;
   transform: rotate(-2deg);
+}
+
+.sketch-btn:hover {
+  transform: translate(-2px, -3px) rotate(1deg);
+  box-shadow: 7px 8px 0 rgba(47, 47, 47, 0.82);
+}
+
+.sketch-btn:active {
+  transform: translate(3px, 4px) rotate(0deg);
+  box-shadow: 1px 1px 0 rgba(47, 47, 47, 0.9);
+}
+
+.login-btn {
+  animation-delay: 0.35s;
+}
+
+.signup-btn {
+  animation-delay: 0s;
 }
 
 .landing-content {
@@ -81,6 +104,14 @@
 
 .signup-btn {
   background: #b7eadf;
+}
+
+.login-btn:hover {
+  background: #fff3e7;
+}
+
+.signup-btn:hover {
+  background: #c8f6ed;
 }
 
 /* FULL OPEN HERO */
@@ -210,4 +241,15 @@ h1 {
 .no-scroll {
   height: 100vh;
   overflow: hidden;
+}
+
+@keyframes buttonBob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+
+  50% {
+    translate: 0 -4px;
+  }
 }

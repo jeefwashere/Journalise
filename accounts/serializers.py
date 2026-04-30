@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
 from pets.models import Pet
@@ -162,12 +163,17 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def validate_password(self, value):
-        self.validate_password(value)
+        validate_password(value)
         return value
 
     def create(self, validated_data):
-        return User.objects.create(
+        user = User.objects.create_user(
             username=validated_data["username"],
             email=validated_data["email"],
             password=validated_data["password"],
         )
+        UserProfile.objects.get_or_create(
+            user=user,
+            defaults={"display_name": validated_data["username"]},
+        )
+        return user
