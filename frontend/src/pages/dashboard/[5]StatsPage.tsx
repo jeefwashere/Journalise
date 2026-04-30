@@ -205,22 +205,6 @@ export default function StatsPage() {
           <button type="button" onClick={handleLogout}>
             Log Out
           </button>
-
-          <AnimatePresence>
-            {menuOpen && (
-              <motion.div
-                className="menu-dropdown"
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-              >
-                <Link to="/stats">My Stats</Link>
-                <Link to="/account">My Account</Link>
-                <Link to="/journal-history">Journal History</Link>
-                <Link to="/logout">Logout</Link>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </nav>
 
@@ -367,7 +351,6 @@ export default function StatsPage() {
           <motion.div
             className="teacher-pet"
             whileHover={{ y: -8, rotate: 2 }}
-            onClick={() => (window.location.href = "/pet-room")}
           >
             <div className="speech">Great day!</div>
             <img src={dogPet} alt="Teacher pet dog" />

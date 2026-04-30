@@ -1,5 +1,4 @@
 import React, { useState, useRef } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 import "../../styles/public/signup.css";
@@ -38,13 +37,6 @@ const PETS: Pet[] = [
   { id: "pet4", label: "Pet 4", petType: "cat", defaultImg: pet4Default, selectedImg: pet4Selected },
 ];
 
-const PET_TYPE_BY_ID: Record<string, number> = {
-  dog: 0,
-  cat: 1,
-  bunny: 2,
-  frog: 3,
-};
-
 const Signup: React.FC = () => {
   const navigate = useNavigate();
 
@@ -58,8 +50,6 @@ const Signup: React.FC = () => {
     password: "",
     form: "",
   });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [selectedPet, setSelectedPet] = useState<string | null>(null);
   const [petName, setPetName] = useState("");
   const [petNameError, setPetNameError] = useState("");
@@ -85,42 +75,6 @@ const Signup: React.FC = () => {
     }
     setErrors(newErrors);
     return valid;
-  };
-
-  const getSignupErrorMessage = (error: unknown) => {
-    if (!axios.isAxiosError(error)) {
-      return "Unable to create your account. Please try again.";
-    }
-
-    const data = error.response?.data;
-
-    if (!data) {
-      return "Unable to create your account. Please try again.";
-    }
-
-    if (typeof data === "string") {
-      return data;
-    }
-
-    if (typeof data.detail === "string") {
-      return data.detail;
-    }
-
-    const fieldMessages = ["username", "email", "password"]
-      .flatMap((field) => {
-        const value = data[field];
-
-        if (Array.isArray(value)) {
-          return value.map(String);
-        }
-
-        return typeof value === "string" ? [value] : [];
-      })
-      .filter(Boolean);
-
-    return (
-      fieldMessages[0] || "Unable to create your account. Please try again."
-    );
   };
 
   const smoothScrollTo = (targetY: number, duration: number) => {
@@ -402,9 +356,9 @@ const Signup: React.FC = () => {
                 disabled={!petName.trim() || loading}
                 onClick={handleLetsGo}
               >
-                {isSubmitting ? "Creating..." : "Next →"}
+                {loading ? "Creating..." : "Next →"}
               </button>
-              <span className="error">{errors.form}</span>
+              <span className="error">{signupError || errors.form}</span>
             </div>
           )}
         </div>

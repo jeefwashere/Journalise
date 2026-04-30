@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "../../api/api";
 import "../../styles/dashboard/[6]JournalHistoryPage.css";
@@ -50,7 +50,7 @@ function todayISO() {
 }
 
 export default function JournalHistoryPage() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
   const [openEntry, setOpenEntry] = useState<number | null>(0);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
@@ -160,6 +160,14 @@ export default function JournalHistoryPage() {
     }. Most of your activity happened in ${apps}.`;
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("token");
+    localStorage.removeItem("journaliseIsAuthenticated");
+    localStorage.removeItem("journaliseHomeState");
+    navigate("/login");
+  };
+
   return (
     <motion.div
       className="journal-page"
@@ -167,34 +175,17 @@ export default function JournalHistoryPage() {
       animate={{ opacity: 1, y: 0 }}
     >
       <nav className="journal-nav">
-        <Link to="/dashboard" className="journal-logo">
+        <Link to="/home" className="journal-logo">
           Journalise
         </Link>
 
-        <div className="nav-right">
-          <Link to="/dashboard" className="icon-btn">
-            ⌂
-          </Link>
-
-          <button
-            className="icon-btn"
-            onClick={() => setMenuOpen(!menuOpen)}
-          >
-            ☰
+        <div className="journal-nav-links">
+          <Link to="/stats">Stats</Link>
+          <Link to="/journal">Journal</Link>
+          <Link to="/account">My Account</Link>
+          <button type="button" onClick={handleLogout}>
+            Log Out
           </button>
-
-          {menuOpen && (
-            <motion.div
-              className="menu-dropdown"
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Link to="/stats">My Stats</Link>
-              <Link to="/account">My Account</Link>
-              <Link to="/journal-history">Journal History</Link>
-              <Link to="/logout">Logout</Link>
-            </motion.div>
-          )}
         </div>
       </nav>
 
@@ -335,9 +326,7 @@ export default function JournalHistoryPage() {
             You did great today!
           </div>
 
-          <Link to="/pet-room">
-            <img src={dogPet} alt="pet" />
-          </Link>
+          <img src={dogPet} alt="pet" />
         </motion.div>
       </main>
     </motion.div>
